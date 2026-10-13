@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Barbearia Navalha de Ouro · atendimento</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <main class="pagina">
+    <section class="chat" aria-label="Conversa com o atendente">
+      <header class="cabecalho">
+        <div class="avatar" aria-hidden="true">NO</div>
+        <div class="identificacao">
+          <h1 id="nome-do-negocio">Barbearia Navalha de Ouro</h1>
+          <p class="status"><span id="status">online</span> · <span id="telefone-do-cliente"></span></p>
+        </div>
+        <p class="selo" id="selo-interpretador" hidden>Entendimento: motor próprio (sem IA paga)</p>
+      </header>
+
+      <ol class="mensagens" id="mensagens" aria-live="polite"></ol>
+
+      <div class="sugestoes" id="sugestoes" role="group" aria-label="Respostas rápidas"></div>
+
+      <form class="compositor" id="compositor" autocomplete="off">
+        <label class="oculto" for="texto">Mensagem</label>
+        <input id="texto" name="texto" type="text" maxlength="1000" placeholder="Digite uma mensagem" required>
+        <button type="submit" id="enviar" aria-label="Enviar">Enviar</button>
+      </form>
+    </section>
+
+    <details class="bastidores" id="bastidores" open>
+      <summary>Bastidores</summary>
+      <p class="explicacao">O que o atendente entendeu da última mensagem e para onde a conversa foi.</p>
+      <dl id="diagnostico">
+        <dt>Interpretado por</dt><dd id="d-origem">—</dd>
+        <dt>Intenção</dt><dd id="d-intencao">—</dd>
+        <dt>Confiança</dt><dd id="d-confianca">—</dd>
+        <dt>Entidades</dt><dd id="d-entidades">—</dd>
+        <dt>Estado</dt><dd id="d-estado">—</dd>
+        <dt>Nota</dt><dd id="d-nota">—</dd>
+      </dl>
+    </details>
+  </main>
+
+  <footer class="rodape">Demonstração, sem vínculo com o WhatsApp. Não envie dados reais.</footer>
+</body>
+</html>

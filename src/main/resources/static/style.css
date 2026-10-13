@@ -1,0 +1,282 @@
+:root {
+  --verde-escuro: #0b5c55;
+  --verde-medio: #128c7e;
+  --fundo-da-conversa: #efeae2;
+  --balao-cliente: #d9fdd3;
+  --balao-atendente: #ffffff;
+  --texto: #111b21;
+  --texto-suave: #54656f;
+  --borda: #d1d7db;
+  --aviso: #fff3c4;
+  --raio: 10px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px;
+  color: var(--texto);
+  background: #d1d7db;
+  display: flex;
+  flex-direction: column;
+}
+
+.pagina {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 16px;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px;
+  min-height: 0;
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: calc(100vh - 80px);
+  background: var(--fundo-da-conversa);
+  border-radius: var(--raio);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.cabecalho {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--verde-escuro);
+  color: #ffffff;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  background: #f5d76e;
+  color: var(--verde-escuro);
+}
+
+.identificacao {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.identificacao h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.status {
+  margin: 2px 0 0;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.selo {
+  margin: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.mensagens {
+  list-style: none;
+  margin: 0;
+  padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.balao {
+  max-width: 78%;
+  padding: 7px 10px;
+  border-radius: var(--raio);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
+}
+
+.balao.atendente {
+  align-self: flex-start;
+  background: var(--balao-atendente);
+  border-top-left-radius: 2px;
+}
+
+.balao.cliente {
+  align-self: flex-end;
+  background: var(--balao-cliente);
+  border-top-right-radius: 2px;
+}
+
+.balao.aviso {
+  align-self: center;
+  max-width: 90%;
+  background: var(--aviso);
+  font-size: 13px;
+  text-align: center;
+}
+
+.balao.digitando {
+  color: var(--texto-suave);
+  font-style: italic;
+}
+
+.sugestoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 16px 8px;
+}
+
+.sugestoes:empty {
+  display: none;
+}
+
+.chip {
+  border: 1px solid var(--verde-medio);
+  background: #ffffff;
+  color: var(--verde-escuro);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.chip:hover,
+.chip:focus-visible {
+  background: #e7f6f3;
+}
+
+.compositor {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f0f2f5;
+}
+
+.compositor input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  font: inherit;
+}
+
+.compositor button {
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--verde-medio);
+  color: #ffffff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.compositor button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.bastidores {
+  align-self: start;
+  background: #ffffff;
+  border-radius: var(--raio);
+  padding: 12px 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.bastidores summary {
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.explicacao {
+  margin: 8px 0 12px;
+  font-size: 13px;
+  color: var(--texto-suave);
+}
+
+.bastidores dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  font-size: 13px;
+}
+
+.bastidores dt {
+  color: var(--texto-suave);
+}
+
+.bastidores dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.bastidores ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.rodape {
+  padding: 8px 16px 12px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--texto-suave);
+}
+
+.oculto {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+  .pagina {
+    grid-template-columns: 1fr;
+    padding: 0;
+    gap: 0;
+  }
+
+  .chat {
+    height: calc(100vh - 110px);
+    border-radius: 0;
+  }
+
+  .bastidores {
+    border-radius: 0;
+  }
+
+  .balao {
+    max-width: 88%;
+  }
+}

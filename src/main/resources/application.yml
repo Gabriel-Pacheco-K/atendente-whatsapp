@@ -38,5 +38,38 @@ app:
     catalog-ttl: 60s
     reconciliation-retry-delay: 1s
     max-calls-per-turn: 14
+  web:
+    enabled: true
+    show-diagnostics: ${SHOW_DIAGNOSTICS:true}
+    messages-per-minute: 20
+    requests-per-minute-per-ip: 60
+    sessions-per-hour-per-ip: 10
+    max-body: 16KB
+  whatsapp:
+    enabled: ${WHATSAPP_ENABLED:false}
+    verify-token: ${WHATSAPP_VERIFY_TOKEN:}
+    app-secret: ${WHATSAPP_APP_SECRET:}
+    phone-number-id: ${WHATSAPP_PHONE_NUMBER_ID:}
+    messages-per-minute: 30
+    max-message-age: 24h
+    max-messages-per-payload: 50
+    max-body: 256KB
+    sending:
+      enabled: ${WHATSAPP_SENDING_ENABLED:false}
+      access-token: ${WHATSAPP_ACCESS_TOKEN:}
+      graph-url: https://graph.facebook.com
+      graph-api-version: ${WHATSAPP_GRAPH_VERSION:v23.0}
+      connect-timeout: 2s
+      read-timeout: 5s
+  ai:
+    claude:
+      enabled: ${CLAUDE_ENABLED:true}       # só tem efeito com ANTHROPIC_API_KEY
+      api-key: ${ANTHROPIC_API_KEY:}
+      model: ${CLAUDE_MODEL:claude-haiku-5-5}
+      effort: ${CLAUDE_EFFORT:low}
+      max-tokens: 2048
+      timeout: 6s
+      base-url: ${ANTHROPIC_BASE_URL:}
+      rules-confidence-threshold: 0.75
   # Nenhum texto de cliente é guardado; a resposta da web fica 24 h só para o reenvio idempotente.
   retention: { enabled: true, processed-messages: 14d, web-replies: 24h, web-customers: 7d, whatsapp-customers: 180d }

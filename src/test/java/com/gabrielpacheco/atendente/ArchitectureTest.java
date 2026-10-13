@@ -63,7 +63,6 @@ class ArchitectureTest {
                 .check(CLASSES);
         noClasses().that().resideInAPackage("..adapter.in..")
                 .should().dependOnClassesThat().resideInAPackage("..adapter.out..")
-                .allowEmptyShould(true)
                 .check(CLASSES);
     }
 

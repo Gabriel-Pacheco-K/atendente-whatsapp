@@ -1,10 +1,14 @@
 package com.gabrielpacheco.atendente;
 
+import com.gabrielpacheco.atendente.adapter.in.web.ChatRateLimits;
+import com.gabrielpacheco.atendente.adapter.out.nlu.rules.RuleBasedInterpreter;
 import com.gabrielpacheco.atendente.application.CatalogProvider;
+import com.gabrielpacheco.atendente.application.port.out.MessageInterpreter;
 import com.gabrielpacheco.atendente.fixtures.AgendaHttp;
 import com.gabrielpacheco.atendente.fixtures.MutableClock;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,8 +34,11 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(IntegrationTestBase.RelogioDeTeste.class)
+@Import(IntegrationTestBase.ConfiguracaoDeTeste.class)
 public abstract class IntegrationTestBase {
+
+    /** Uma mensagem com este texto faz o interpretador falhar, como um bug no meio do turno. */
+    protected static final String ERRO_PROPOSITAL = "erro-proposital";
 
     @ServiceConnection
     static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine");
@@ -54,6 +61,9 @@ public abstract class IntegrationTestBase {
     @Autowired
     private CatalogProvider catalogo;
 
+    @Autowired
+    private ObjectProvider<ChatRateLimits> limitesDoChat;
+
     @DynamicPropertySource
     static void servicosExternos(DynamicPropertyRegistry registry) {
         registry.add("app.scheduling-api.base-url", AGENDA::baseUrl);
@@ -68,6 +78,7 @@ public abstract class IntegrationTestBase {
         relogio.ajustar(MutableClock.REFERENCIA);
         agenda().comCatalogoDoSeed();
         catalogo.invalidate();
+        limitesDoChat.ifAvailable(ChatRateLimits::reset);
     }
 
     protected static AgendaHttp agenda() {
@@ -75,12 +86,24 @@ public abstract class IntegrationTestBase {
     }
 
     @TestConfiguration(proxyBeanMethods = false)
-    static class RelogioDeTeste {
+    static class ConfiguracaoDeTeste {
 
         @Bean
         @Primary
         MutableClock mutableClock() {
             return MutableClock.naReferencia();
+        }
+
+        @Bean
+        @Primary
+        MessageInterpreter interpretadorQueFalhaDeProposito() {
+            RuleBasedInterpreter regras = new RuleBasedInterpreter();
+            return (texto, contexto) -> {
+                if (texto.contains(ERRO_PROPOSITAL)) {
+                    throw new IllegalStateException("Falha proposital do teste");
+                }
+                return regras.interpret(texto, contexto);
+            };
         }
     }
 }
