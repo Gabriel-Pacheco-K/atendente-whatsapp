@@ -1,0 +1,12 @@
+target/
+*.class
+*.log
+
+.env
+docker-compose.override.yml
+node_modules/
+
+.idea/
+*.iml
+.vscode/
+.DS_Store

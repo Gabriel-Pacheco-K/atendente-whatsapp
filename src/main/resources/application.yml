@@ -1,0 +1,28 @@
+server:
+  port: 8080
+  shutdown: graceful
+  max-http-request-header-size: 8KB
+  forward-headers-strategy: ${FORWARD_HEADERS:none}
+  error: { include-message: never, include-stacktrace: never, include-binding-errors: never, include-exception: false }
+
+spring:
+  application.name: atendente-whatsapp
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/atendente}
+    username: ${DB_USER:atendente}
+    password: ${DB_PASSWORD:atendente}
+    hikari:
+      maximum-pool-size: 10
+      data-source-properties:
+        # A trava por cliente espera no máximo 3 s; as outras duas são rede de segurança para chamadas HTTP lentas.
+        options: "-c lock_timeout=3s -c statement_timeout=15s -c idle_in_transaction_session_timeout=60s"
+  jpa: { hibernate.ddl-auto: validate, open-in-view: false }
+  mvc.problemdetails.enabled: true
+  lifecycle.timeout-per-shutdown-phase: 20s
+
+management:
+  endpoints.web.exposure.include: health
+  endpoint.health.show-details: never
+
+app:
+  timezone: ${APP_TIMEZONE:America/Sao_Paulo}
