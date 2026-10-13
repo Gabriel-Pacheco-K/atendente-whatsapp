@@ -1,0 +1,8 @@
+Às segundas a barbearia não abre. O próximo dia com horários é *terça-feira, 20/10*:
+1. 09:00 com João
+2. 10:45 com Pedro
+3. 13:00 com João
+4. 14:45 com Pedro
+5. 16:45 com João
+6. 18:30 com Pedro
+Responda com o número ou com outro horário (ex.: 10:30).

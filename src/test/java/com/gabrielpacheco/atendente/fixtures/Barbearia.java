@@ -24,6 +24,8 @@ import static java.time.DayOfWeek.WEDNESDAY;
 /** A Barbearia Navalha de Ouro como o seed do agendamento-api a cadastra; hoje é terça, 13/10/2026, 14:00. */
 public final class Barbearia {
 
+    public static final String NOME = "Barbearia Navalha de Ouro";
+    public static final String ENDERECO = "Rua das Palmeiras, 120, Centro, Florianópolis/SC (endereço fictício)";
     public static final LocalDate HOJE = LocalDate.of(2026, 10, 13);
     public static final LocalTime AGORA = LocalTime.of(14, 0);
     public static final int DIAS_A_FRENTE = 30;

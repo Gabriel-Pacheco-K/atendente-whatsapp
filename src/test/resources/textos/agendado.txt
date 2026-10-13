@@ -1,0 +1,3 @@
+Agendado, Gabriel! Seu código é *#1*.
+Endereço: Rua das Palmeiras, 120, Centro, Florianópolis/SC (endereço fictício).
+Se precisar cancelar, é só mandar *cancelar* por aqui.

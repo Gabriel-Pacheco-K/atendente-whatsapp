@@ -1,0 +1,6 @@
+Olá! Eu sou o atendente virtual da *Barbearia Navalha de Ouro*. Posso te ajudar a:
+1. Agendar um horário
+2. Ver ou cancelar seus agendamentos
+3. Preços e serviços
+4. Endereço e horário de funcionamento
+Se quiser falar com uma pessoa, escreva *atendente*.

@@ -1,0 +1,5 @@
+O João atende na sexta das 09:00 às 12:00 e das 13:00 às 19:00. Os mais próximos são:
+1. 18:00
+2. 18:15
+3. 18:30
+Responda com o número ou com outro horário (ex.: 10:30).

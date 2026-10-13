@@ -1,0 +1,5 @@
+Às 10:00 de *sexta-feira, 16/10*, o Pedro já tem cliente. Os horários mais próximos com ele são:
+1. 10:30
+2. 10:45
+3. 11:00
+Responda com o número ou com outro horário (ex.: 10:30).

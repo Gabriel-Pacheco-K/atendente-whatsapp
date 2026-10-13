@@ -65,6 +65,16 @@ class PtBrTest {
     }
 
     @Test
+    @DisplayName("Dia da semana curto com a preposição certa, e data com hora para rótulos")
+    void deveFormatarDiasCurtos() {
+        assertThat(PtBr.onWeekday(DayOfWeek.WEDNESDAY)).isEqualTo("na quarta");
+        assertThat(PtBr.onWeekday(DayOfWeek.SATURDAY)).isEqualTo("no sábado");
+        assertThat(PtBr.dayMonth(LocalDate.of(2026, 11, 3))).isEqualTo("03/11");
+        assertThat(PtBr.shortDateTime(QUARTA.atTime(15, 0))).isEqualTo("qua 14/10 15:00");
+        assertThat(PtBr.shortDateTime(SABADO.atTime(8, 30))).isEqualTo("sáb 17/10 08:30");
+    }
+
+    @Test
     @DisplayName("Dia lotado concorda em gênero")
     void deveConcordarODiaLotado() {
         assertThat(PtBr.fullDay(QUARTA)).isEqualTo("A quarta-feira, 14/10 já está lotada");

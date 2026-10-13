@@ -1,0 +1,8 @@
+Horários livres no *sábado, 17/10* de manhã para *Barba* (30 min, R$ 35,00):
+1. 08:00 com João
+2. 08:45 com Pedro
+3. 09:30 com João
+4. 10:15 com Pedro
+5. 11:00 com João
+6. 11:45 com Pedro
+Responda com o número ou com outro horário (ex.: 10:30).

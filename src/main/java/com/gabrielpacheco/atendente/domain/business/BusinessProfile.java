@@ -1,5 +1,6 @@
 package com.gabrielpacheco.atendente.domain.business;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,11 @@ public record BusinessProfile(String name, String address, String humanContactPh
 
     /** Se o dia da semana tem expediente; feriados ficam em {@link #closedOn(LocalDate)}. */
     public boolean opensOn(LocalDate date) {
-        return openingHours.stream().anyMatch(period -> period.days().contains(date.getDayOfWeek()));
+        return opensOn(date.getDayOfWeek());
+    }
+
+    public boolean opensOn(DayOfWeek day) {
+        return openingHours.stream().anyMatch(period -> period.days().contains(day));
     }
 
     public Optional<ClosedDate> closedOn(LocalDate date) {

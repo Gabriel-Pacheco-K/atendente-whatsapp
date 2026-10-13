@@ -10,4 +10,8 @@ public record WorkingPeriod(DayOfWeek day, LocalTime start, LocalTime end) {
             throw new IllegalArgumentException("O expediente precisa começar antes de terminar: " + start + "–" + end);
         }
     }
+
+    public boolean contains(DayOfWeek day, LocalTime time) {
+        return this.day == day && !time.isBefore(start) && time.isBefore(end);
+    }
 }

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
@@ -18,6 +19,7 @@ public final class PtBr {
             List.of("segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo");
     private static final List<String> DAY_PLURALS =
             List.of("segundas", "terças", "quartas", "quintas", "sextas", "sábados", "domingos");
+    private static final List<String> DAY_ABBREVIATIONS = List.of("seg", "ter", "qua", "qui", "sex", "sáb", "dom");
 
     private PtBr() {
     }
@@ -40,16 +42,37 @@ public final class PtBr {
         return DAY_NAMES.get(day.ordinal());
     }
 
+    /** "14/10". */
+    public static String dayMonth(LocalDate date) {
+        return String.format(Locale.ROOT, "%02d/%02d", date.getDayOfMonth(), date.getMonthValue());
+    }
+
     /** "quarta-feira, 14/10" ou "sábado, 17/10". */
     public static String longDate(LocalDate date) {
         DayOfWeek day = date.getDayOfWeek();
         String weekday = isWeekend(day) ? dayName(day) : dayName(day) + "-feira";
-        return weekday + ", " + String.format(Locale.ROOT, "%02d/%02d", date.getDayOfMonth(), date.getMonthValue());
+        return weekday + ", " + dayMonth(date);
+    }
+
+    /** "qua 14/10 15:00", para rótulos curtos. */
+    public static String shortDateTime(LocalDateTime dateTime) {
+        return DAY_ABBREVIATIONS.get(dateTime.getDayOfWeek().ordinal()) + " " + dayMonth(dateTime.toLocalDate())
+                + " " + time(dateTime.toLocalTime());
+    }
+
+    /** "na" antes de dia útil e "no" antes de sábado e domingo. */
+    public static String preposition(DayOfWeek day) {
+        return isWeekend(day) ? "no" : "na";
     }
 
     /** "na quarta-feira, 14/10" ou "no sábado, 17/10". */
     public static String onDate(LocalDate date) {
-        return (isWeekend(date.getDayOfWeek()) ? "no " : "na ") + longDate(date);
+        return preposition(date.getDayOfWeek()) + " " + longDate(date);
+    }
+
+    /** "na quarta" ou "no sábado". */
+    public static String onWeekday(DayOfWeek day) {
+        return preposition(day) + " " + dayName(day);
     }
 
     /** "A quarta-feira, 14/10 já está lotada" ou "O sábado, 17/10 já está lotado". */
