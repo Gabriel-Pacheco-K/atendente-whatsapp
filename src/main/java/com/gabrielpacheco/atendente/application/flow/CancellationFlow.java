@@ -111,17 +111,19 @@ public class CancellationFlow {
             scheduling.cancel(id, reason);
             return cancelled(id);
         } catch (SchedulingException e) {
-            return afterFailedCancel(state, id, e);
+            return afterFailedCancel(t, state, id, e);
         }
     }
 
-    private StepResult afterFailedCancel(ConfirmingCancellation state, long id, SchedulingException failure) {
+    private StepResult afterFailedCancel(TurnContext t, ConfirmingCancellation state, long id,
+                                         SchedulingException failure) {
         return switch (failure) {
-            case BookingRejectedException e -> currentStatus(id).filter(BookingStatus.CANCELLED::equals).isPresent()
+            case BookingRejectedException e -> isCancelledNow(t, id)
                     ? alreadyCancelled(id)
                     : StepResult.of(Idle.EMPTY, Texts.cancelRejected(e.detail(), phone()));
-            case UnknownBookingOutcomeException e -> currentStatus(id).filter(BookingStatus.CANCELLED::equals)
-                    .isPresent() ? cancelled(id) : StepResult.of(state, Texts.schedulingOffline(phone()));
+            case UnknownBookingOutcomeException e -> isCancelledNow(t, id)
+                    ? cancelled(id)
+                    : StepResult.of(state, Texts.schedulingOffline(phone()));
             case AppointmentNotFoundException e -> alreadyCancelled(id);
             case SchedulingUnavailableException e -> StepResult.of(state, Texts.schedulingOffline(phone()));
             case SlotTakenException e -> unexpectedCancelFailure(e);
@@ -144,11 +146,15 @@ public class CancellationFlow {
         return StepResult.of(Idle.EMPTY, Texts.genericError(phone()));
     }
 
-    private Optional<BookingStatus> currentStatus(long id) {
+    /** Confere na agenda depois de uma falha no cancelamento; sem resposta, não dá para afirmar nada. */
+    private boolean isCancelledNow(TurnContext t, long id) {
+        if (!t.deadline().allows(settings.schedulingCallTimeout())) {
+            return false;
+        }
         try {
-            return Optional.of(scheduling.find(id).status());
+            return scheduling.within(t.deadline()).find(id).status() == BookingStatus.CANCELLED;
         } catch (SchedulingException e) {
-            return Optional.empty();
+            return false;
         }
     }
 
@@ -171,7 +177,7 @@ public class CancellationFlow {
         }
         List<Optional<AppointmentInfo>> current;
         try {
-            current = findAll(upcoming);
+            current = findAll(upcoming, scheduling.within(t.deadline()));
         } catch (SchedulingException e) {
             return Optional.empty();
         }
@@ -204,10 +210,10 @@ public class CancellationFlow {
     }
 
     /** Uma consulta por agendamento, em paralelo; vazio quando a agenda não o encontra mais. */
-    private List<Optional<AppointmentInfo>> findAll(List<Booking> upcoming) {
+    private static List<Optional<AppointmentInfo>> findAll(List<Booking> upcoming, SchedulingPort agenda) {
         return ParallelCalls.each(upcoming, booking -> {
             try {
-                return Optional.of(scheduling.find(booking.appointmentId()));
+                return Optional.of(agenda.find(booking.appointmentId()));
             } catch (AppointmentNotFoundException e) {
                 return Optional.empty();
             }

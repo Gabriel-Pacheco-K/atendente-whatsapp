@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.gabrielpacheco.atendente.application.port.out.AppointmentInfo;
+import com.gabrielpacheco.atendente.application.port.out.Deadline;
 import com.gabrielpacheco.atendente.application.port.out.NewAppointment;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingPort;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingUnavailableException;
@@ -204,6 +205,11 @@ class CatalogProviderTest {
         @Override
         public List<AppointmentInfo> dayAgenda(long professionalId, LocalDate date) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public SchedulingPort within(Deadline deadline) {
+            return this;
         }
     }
 }

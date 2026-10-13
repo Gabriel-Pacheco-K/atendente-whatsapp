@@ -28,4 +28,7 @@ public interface SchedulingPort {
 
     /** Todos os agendamentos do profissional no dia, em qualquer status. Usado na reconciliação. */
     List<AppointmentInfo> dayAgenda(long professionalId, LocalDate date);
+
+    /** Esta mesma agenda, mas sem repetir uma consulta que falhou se a repetição não couber em {@code deadline}. */
+    SchedulingPort within(Deadline deadline);
 }

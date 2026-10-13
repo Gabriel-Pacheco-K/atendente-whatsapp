@@ -1,6 +1,7 @@
 package com.gabrielpacheco.atendente.application.flow;
 
 import com.gabrielpacheco.atendente.application.ConversationSettings;
+import com.gabrielpacheco.atendente.application.port.out.Deadline;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingPort;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingUnavailableException;
 import com.gabrielpacheco.atendente.domain.booking.BookingDraft;
@@ -64,7 +65,7 @@ public class AvailabilityFinder {
                 if (!deadline.allows(settings.schedulingCallTimeout())) {
                     throw new SchedulingUnavailableException("O prazo do turno acabou antes de achar um dia livre");
                 }
-                List<ProfessionalDaySlots> slots = freeSlots(working, draft.serviceId(), day, now);
+                List<ProfessionalDaySlots> slots = freeSlots(working, draft.serviceId(), day, now, deadline);
                 calls += working.size();
                 DayAvailability found = new DayAvailability(requested, day, slots,
                         day.equals(requested) ? RequestedDayStatus.AVAILABLE : requestedStatus, closedReason, null,
@@ -97,9 +98,10 @@ public class AvailabilityFinder {
 
     /** Uma chamada por profissional, em paralelo; só ficam os horários que ainda não passaram. */
     private List<ProfessionalDaySlots> freeSlots(List<Professional> working, long serviceId, LocalDate day,
-                                                 LocalDateTime now) {
+                                                 LocalDateTime now, Deadline deadline) {
+        SchedulingPort agenda = scheduling.within(deadline);
         return ParallelCalls.each(working, professional -> new ProfessionalDaySlots(professional, day,
-                scheduling.freeSlots(professional.id(), serviceId, day).stream()
+                agenda.freeSlots(professional.id(), serviceId, day).stream()
                         .filter(time -> day.atTime(time).isAfter(now))
                         .toList()));
     }

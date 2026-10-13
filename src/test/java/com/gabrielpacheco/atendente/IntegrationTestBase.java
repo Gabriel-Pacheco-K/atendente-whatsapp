@@ -1,6 +1,7 @@
 package com.gabrielpacheco.atendente;
 
-import com.gabrielpacheco.atendente.fixtures.FakeSchedulingPort;
+import com.gabrielpacheco.atendente.application.CatalogProvider;
+import com.gabrielpacheco.atendente.fixtures.AgendaHttp;
 import com.gabrielpacheco.atendente.fixtures.InMemoryBookingStore;
 import com.gabrielpacheco.atendente.fixtures.InMemoryConversationStore;
 import com.gabrielpacheco.atendente.fixtures.InMemoryCustomerStore;
@@ -27,7 +28,8 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 /**
  * Base dos testes com Spring: PostgreSQL real e WireMock para a agenda e para a Graph API.
  * Os contêineres e servidores sobem uma vez por JVM e nunca param, para que a porta não mude e o contexto do
- * Spring continue reaproveitável entre as classes de teste.
+ * Spring continue reaproveitável entre as classes de teste. Antes de cada teste, a agenda volta a ter só o catálogo
+ * do seed e o relógio volta para terça, 13/10/2026, 14:00.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -53,6 +55,9 @@ public abstract class IntegrationTestBase {
     @Autowired
     protected MutableClock relogio;
 
+    @Autowired
+    private CatalogProvider catalogo;
+
     @DynamicPropertySource
     static void servicosExternos(DynamicPropertyRegistry registry) {
         registry.add("app.scheduling-api.base-url", AGENDA::baseUrl);
@@ -65,6 +70,12 @@ public abstract class IntegrationTestBase {
         AGENDA.resetAll();
         GRAPH.resetAll();
         relogio.ajustar(MutableClock.REFERENCIA);
+        agenda().comCatalogoDoSeed();
+        catalogo.invalidate();
+    }
+
+    protected static AgendaHttp agenda() {
+        return AgendaHttp.em(AGENDA);
     }
 
     @TestConfiguration(proxyBeanMethods = false)
@@ -77,14 +88,9 @@ public abstract class IntegrationTestBase {
         }
     }
 
-    /** A agenda e os stores da conversa em memória, no lugar das portas de saída que ainda não têm adaptador. */
+    /** Os stores da conversa em memória, no lugar das portas de saída que ainda não têm adaptador. */
     @TestConfiguration(proxyBeanMethods = false)
     static class PortasEmMemoria {
-
-        @Bean
-        FakeSchedulingPort agendaEmMemoria(MutableClock relogio) {
-            return new FakeSchedulingPort(relogio);
-        }
 
         @Bean
         InMemoryCustomerStore clientesEmMemoria() {

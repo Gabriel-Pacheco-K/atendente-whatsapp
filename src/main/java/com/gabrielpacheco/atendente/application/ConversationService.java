@@ -1,7 +1,6 @@
 package com.gabrielpacheco.atendente.application;
 
 import com.gabrielpacheco.atendente.application.flow.ConversationRouter;
-import com.gabrielpacheco.atendente.application.flow.Deadline;
 import com.gabrielpacheco.atendente.application.flow.StepResult;
 import com.gabrielpacheco.atendente.application.flow.TurnContext;
 import com.gabrielpacheco.atendente.application.port.in.ConversationReply;
@@ -10,6 +9,7 @@ import com.gabrielpacheco.atendente.application.port.in.IncomingMessage;
 import com.gabrielpacheco.atendente.application.port.in.MessageKind;
 import com.gabrielpacheco.atendente.application.port.out.ConversationStore;
 import com.gabrielpacheco.atendente.application.port.out.CustomerStore;
+import com.gabrielpacheco.atendente.application.port.out.Deadline;
 import com.gabrielpacheco.atendente.application.port.out.MessageInterpreter;
 import com.gabrielpacheco.atendente.application.port.out.ProcessedMessage;
 import com.gabrielpacheco.atendente.application.port.out.ProcessedMessageStore;

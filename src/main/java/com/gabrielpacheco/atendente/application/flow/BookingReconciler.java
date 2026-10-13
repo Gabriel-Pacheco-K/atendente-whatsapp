@@ -3,6 +3,7 @@ package com.gabrielpacheco.atendente.application.flow;
 import com.gabrielpacheco.atendente.application.ConversationSettings;
 import com.gabrielpacheco.atendente.application.port.out.AppointmentInfo;
 import com.gabrielpacheco.atendente.application.port.out.BookingStore;
+import com.gabrielpacheco.atendente.application.port.out.Deadline;
 import com.gabrielpacheco.atendente.application.port.out.NewAppointment;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingException;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingPort;
@@ -49,7 +50,7 @@ public class BookingReconciler {
             if (retry) {
                 pause.pause(wait);
             }
-            Optional<AppointmentInfo> found = lookUp(attempted, customerId);
+            Optional<AppointmentInfo> found = lookUp(attempted, customerId, deadline);
             if (found.isPresent()) {
                 log.warn("Agendamento #{} reconciliado após resultado incerto", found.get().id());
                 return found;
@@ -58,10 +59,11 @@ public class BookingReconciler {
         return Optional.empty();
     }
 
-    private Optional<AppointmentInfo> lookUp(NewAppointment attempted, long customerId) {
+    private Optional<AppointmentInfo> lookUp(NewAppointment attempted, long customerId, Deadline deadline) {
         List<AppointmentInfo> agenda;
         try {
-            agenda = scheduling.dayAgenda(attempted.professionalId(), attempted.startAt().toLocalDate());
+            agenda = scheduling.within(deadline)
+                    .dayAgenda(attempted.professionalId(), attempted.startAt().toLocalDate());
         } catch (SchedulingException e) {
             return Optional.empty();
         }

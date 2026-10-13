@@ -1,6 +1,7 @@
 package com.gabrielpacheco.atendente.application.flow;
 
 import com.gabrielpacheco.atendente.application.port.in.IncomingMessage;
+import com.gabrielpacheco.atendente.application.port.out.Deadline;
 import com.gabrielpacheco.atendente.domain.catalog.Catalog;
 import com.gabrielpacheco.atendente.domain.conversation.Conversation;
 import com.gabrielpacheco.atendente.domain.conversation.ConversationState;

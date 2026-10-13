@@ -3,6 +3,7 @@ package com.gabrielpacheco.atendente.fixtures;
 import com.gabrielpacheco.atendente.application.port.out.AppointmentInfo;
 import com.gabrielpacheco.atendente.application.port.out.AppointmentNotFoundException;
 import com.gabrielpacheco.atendente.application.port.out.BookingRejectedException;
+import com.gabrielpacheco.atendente.application.port.out.Deadline;
 import com.gabrielpacheco.atendente.application.port.out.NewAppointment;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingContractException;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingException;
@@ -164,6 +165,12 @@ public final class FakeSchedulingPort implements SchedulingPort {
                 .filter(a -> a.professionalId() == professionalId && a.startAt().toLocalDate().equals(date))
                 .sorted(Comparator.comparing(AppointmentInfo::startAt))
                 .toList();
+    }
+
+    /** Na memória não há rede: nada é repetido, então o prazo não muda nada. */
+    @Override
+    public SchedulingPort within(Deadline deadline) {
+        return this;
     }
 
     // Preparação dos cenários
