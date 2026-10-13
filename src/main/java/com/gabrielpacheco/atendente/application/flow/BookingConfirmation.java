@@ -157,11 +157,12 @@ public class BookingConfirmation {
             return slotTaken(t, draft);
         }
         if (!known) {
+            // Registrado antes de gravar: se a própria gravação falhar, o agendamento já existe na agenda.
+            transactionEvents.onRollback(() -> log.error("Agendamento #{} criado no agendamento-api, mas a gravação"
+                    + " local foi desfeita; conciliar manualmente", id));
             BookingStatus status = info.status() == BookingStatus.UNKNOWN ? BookingStatus.SCHEDULED : info.status();
             bookings.save(new Booking(id, customerId, draft.serviceId(), info.serviceName(), info.professionalId(),
                     info.professionalName(), info.price(), info.startAt(), info.endAt(), status));
-            transactionEvents.onRollback(() -> log.error("Agendamento #{} criado no agendamento-api, mas a gravação"
-                    + " local foi desfeita; conciliar manualmente", id));
         }
         return StepResult.of(new Idle(new LastBooking(info.ref(), t.now())), reply);
     }

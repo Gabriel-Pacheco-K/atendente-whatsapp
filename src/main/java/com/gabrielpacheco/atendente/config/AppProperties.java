@@ -18,7 +18,8 @@ import java.time.ZoneId;
 public record AppProperties(@NotNull ZoneId timezone,
                             @Valid @NotNull Conversation conversation,
                             @Valid @NotNull Booking booking,
-                            @Valid @NotNull SchedulingApi schedulingApi) {
+                            @Valid @NotNull SchedulingApi schedulingApi,
+                            @Valid @NotNull Retention retention) {
 
     /**
      * @param turnBudget tempo máximo de um turno com a conversa travada; precisa ser maior que o read timeout da
@@ -43,5 +44,16 @@ public record AppProperties(@NotNull ZoneId timezone,
                                 @NotNull Duration catalogTtl,
                                 @NotNull Duration reconciliationRetryDelay,
                                 @Positive int maxCallsPerTurn) {
+    }
+
+    /**
+     * @param webReplies        por quanto tempo a resposta da web fica guardada para o reenvio idempotente
+     * @param whatsappCustomers cliente do WhatsApp sem mensagens há mais que isso, e sem agendamento futuro, é apagado
+     */
+    public record Retention(boolean enabled,
+                            @NotNull Duration processedMessages,
+                            @NotNull Duration webReplies,
+                            @NotNull Duration webCustomers,
+                            @NotNull Duration whatsappCustomers) {
     }
 }

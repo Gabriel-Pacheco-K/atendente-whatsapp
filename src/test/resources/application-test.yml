@@ -1,0 +1,4 @@
+app:
+  retention.enabled: false
+  # A pausa antes da segunda conferência da agenda é de verdade nos testes com Spring; curta, o teste não demora.
+  scheduling-api.reconciliation-retry-delay: 50ms

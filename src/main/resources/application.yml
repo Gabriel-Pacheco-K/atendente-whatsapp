@@ -38,3 +38,5 @@ app:
     catalog-ttl: 60s
     reconciliation-retry-delay: 1s
     max-calls-per-turn: 14
+  # Nenhum texto de cliente é guardado; a resposta da web fica 24 h só para o reenvio idempotente.
+  retention: { enabled: true, processed-messages: 14d, web-replies: 24h, web-customers: 7d, whatsapp-customers: 180d }
