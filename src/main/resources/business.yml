@@ -1,0 +1,26 @@
+# Dados do estabelecimento. Para personalizar sem rebuild, copie este arquivo para ./config/business.yml:
+# as listas são substituídas inteiras. Datas entre aspas, para o YAML não convertê-las.
+business:
+  name: Barbearia Navalha de Ouro
+  address: "Rua das Palmeiras, 120, Centro, Florianópolis/SC (endereço fictício)"
+  human-contact-phone: "(48) 3333-0000"
+  human-contact-hours: "de terça a sexta, das 9h às 19h, e aos sábados, das 8h às 14h"
+  opening-hours:
+    - { days: [TUESDAY, WEDNESDAY, THURSDAY, FRIDAY], opens: "09:00", closes: "19:00" }
+    - { days: [SATURDAY], opens: "08:00", closes: "14:00" }
+  # O agendamento-api não conhece feriados: estes dias nunca são oferecidos.
+  closed-dates:
+    - { date: "2026-10-31", reason: "Confraternização da equipe" }
+    - { date: "2026-11-20", reason: "Dia da Consciência Negra" }
+    - { date: "2026-12-25", reason: "Natal" }
+    - { date: "2027-01-01", reason: "Ano-Novo" }
+  # Os nomes precisam ser os mesmos cadastrados no agendamento-api.
+  services:
+    - { name: Corte masculino, aliases: [corte, cortar, cabelo, degrade, social, maquina, tesoura] }
+    - { name: Barba, aliases: [barba, barbear, bigode, aparar] }
+    - { name: Corte + barba, aliases: [combo, "corte e barba", "cabelo e barba", completo] }
+    - { name: Sobrancelha, aliases: [sobrancelha] }
+  faq:
+    - { id: pagamento, keywords: [pix, cartao, dinheiro, pagamento, pagar, debito, credito], answer: "Aceitamos Pix, cartão de débito e crédito e dinheiro." }
+    - { id: estacionamento, keywords: [estacionamento, estacionar, carro], answer: "Temos 3 vagas em frente à barbearia e estacionamento rotativo na rua." }
+    - { id: criancas, keywords: [crianca, infantil, filho, menino], answer: "Atendemos crianças a partir de 3 anos, com um responsável." }

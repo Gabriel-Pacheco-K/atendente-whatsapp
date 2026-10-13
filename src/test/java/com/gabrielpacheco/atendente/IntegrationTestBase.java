@@ -1,5 +1,10 @@
 package com.gabrielpacheco.atendente;
 
+import com.gabrielpacheco.atendente.fixtures.FakeSchedulingPort;
+import com.gabrielpacheco.atendente.fixtures.InMemoryBookingStore;
+import com.gabrielpacheco.atendente.fixtures.InMemoryConversationStore;
+import com.gabrielpacheco.atendente.fixtures.InMemoryCustomerStore;
+import com.gabrielpacheco.atendente.fixtures.InMemoryProcessedMessageStore;
 import com.gabrielpacheco.atendente.fixtures.MutableClock;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +32,7 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(IntegrationTestBase.RelogioDeTeste.class)
+@Import({IntegrationTestBase.RelogioDeTeste.class, IntegrationTestBase.PortasEmMemoria.class})
 public abstract class IntegrationTestBase {
 
     @ServiceConnection
@@ -69,6 +74,36 @@ public abstract class IntegrationTestBase {
         @Primary
         MutableClock mutableClock() {
             return MutableClock.naReferencia();
+        }
+    }
+
+    /** A agenda e os stores da conversa em memória, no lugar das portas de saída que ainda não têm adaptador. */
+    @TestConfiguration(proxyBeanMethods = false)
+    static class PortasEmMemoria {
+
+        @Bean
+        FakeSchedulingPort agendaEmMemoria(MutableClock relogio) {
+            return new FakeSchedulingPort(relogio);
+        }
+
+        @Bean
+        InMemoryCustomerStore clientesEmMemoria() {
+            return new InMemoryCustomerStore();
+        }
+
+        @Bean
+        InMemoryConversationStore conversasEmMemoria(MutableClock relogio) {
+            return new InMemoryConversationStore(relogio);
+        }
+
+        @Bean
+        InMemoryBookingStore agendamentosEmMemoria() {
+            return new InMemoryBookingStore();
+        }
+
+        @Bean
+        InMemoryProcessedMessageStore mensagensProcessadasEmMemoria(MutableClock relogio) {
+            return new InMemoryProcessedMessageStore(relogio);
         }
     }
 }

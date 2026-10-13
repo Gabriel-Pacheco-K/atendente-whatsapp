@@ -7,6 +7,7 @@ server:
 
 spring:
   application.name: atendente-whatsapp
+  config.import: "classpath:business.yml, optional:file:./config/business.yml"
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/atendente}
     username: ${DB_USER:atendente}
@@ -26,3 +27,14 @@ management:
 
 app:
   timezone: ${APP_TIMEZONE:America/Sao_Paulo}
+  # turn-budget limita o tempo com a conversa travada: nenhuma consulta à agenda começa sem caber nele.
+  conversation: { expires-after: 30m, duplicate-confirmation-window: 2m, max-slot-options: 6, next-day-search-days: 6, turn-budget: 8s }
+  # min-advance espelha a antecedência mínima do agendamento-api, para explicar por que um horário não serve.
+  booking: { days-ahead: 30, max-active-per-customer: 3, min-advance: 30m }
+  scheduling-api:
+    base-url: ${AGENDAMENTO_API_URL:http://localhost:8081}
+    connect-timeout: 2s
+    read-timeout: 5s
+    catalog-ttl: 60s
+    reconciliation-retry-delay: 1s
+    max-calls-per-turn: 14
