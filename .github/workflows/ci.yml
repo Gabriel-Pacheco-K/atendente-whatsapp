@@ -36,3 +36,30 @@ jobs:
 
       - name: Build da imagem Docker
         run: docker build -t atendente-whatsapp .
+
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepara o .env do CI
+        run: ./scripts/preparar-env-ci.sh
+
+      # Sem --wait: o seed termina de propósito, e algumas versões do compose tratam isso como falha.
+      - name: Sobe postgres, agendamento-api (do git), seed e atendente
+        run: docker compose up -d --build
+
+      - name: Aguarda o atendente
+        run: ./scripts/aguardar-saude.sh http://127.0.0.1:8080/actuator/health 240
+
+      - name: Ponta a ponta contra o agendamento-api real
+        run: ./scripts/smoke-test.sh
+
+      - name: Logs em caso de falha
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Derruba o ambiente
+        if: always()
+        run: docker compose down -v

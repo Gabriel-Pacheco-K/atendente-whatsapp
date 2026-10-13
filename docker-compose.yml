@@ -1,0 +1,90 @@
+name: atendente-whatsapp
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+    volumes:
+      - "./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro"
+      - "pgdata:/var/lib/postgresql/data"
+    # Pelo TCP, e com os dois usuários: durante a inicialização o servidor temporário só escuta no socket local,
+    # então este teste só passa depois que o init.sql rodou.
+    healthcheck:
+      test: ["CMD-SHELL", "PGPASSWORD=atendente psql -h 127.0.0.1 -U atendente -d atendente -c 'select 1' && PGPASSWORD=agendamento psql -h 127.0.0.1 -U agendamento -d agendamento -c 'select 1'"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [backend]                      # sem porta publicada
+
+  agendamento-api:
+    # Fixado no commit conferido; trocar por #v1.0.0 quando a tag existir.
+    build: https://github.com/Gabriel-Pacheco-K/agendamento-api.git#b11f03684d38ddbcef4664066f571ed6037e4931
+    environment:
+      DB_URL: "jdbc:postgresql://db:5432/agendamento"
+      DB_USER: agendamento
+      DB_PASSWORD: agendamento
+      APP_TIMEZONE: America/Sao_Paulo
+    ports: ["127.0.0.1:8081:8080"]           # API sem autenticação: só localhost (terminal da demo e teste ponta a ponta)
+    depends_on:
+      db: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/actuator/health | grep -q UP"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 30s
+    restart: on-failure:5
+    networks: [backend, edge]
+
+  seed:
+    image: curlimages/curl:8.10.1
+    entrypoint: ["sh", "/seed/seed-agendamento.sh"]
+    environment:
+      API: "http://agendamento-api:8080"
+    volumes:
+      - "./docker/seed:/seed:ro"
+    depends_on:
+      agendamento-api: { condition: service_healthy }
+    restart: "no"
+    networks: [backend]
+
+  atendente:
+    build: .
+    environment:
+      DB_URL: "jdbc:postgresql://db:5432/atendente"
+      DB_USER: atendente
+      DB_PASSWORD: atendente
+      AGENDAMENTO_API_URL: "http://agendamento-api:8080"
+      APP_TIMEZONE: America/Sao_Paulo
+      TZ: America/Sao_Paulo
+      SHOW_DIAGNOSTICS: "${SHOW_DIAGNOSTICS:-true}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      WHATSAPP_ENABLED: "${WHATSAPP_ENABLED:-false}"
+      WHATSAPP_VERIFY_TOKEN: "${WHATSAPP_VERIFY_TOKEN:-}"
+      WHATSAPP_APP_SECRET: "${WHATSAPP_APP_SECRET:-}"
+      WHATSAPP_PHONE_NUMBER_ID: "${WHATSAPP_PHONE_NUMBER_ID:-}"
+      WHATSAPP_SENDING_ENABLED: "${WHATSAPP_SENDING_ENABLED:-false}"
+      WHATSAPP_ACCESS_TOKEN: "${WHATSAPP_ACCESS_TOKEN:-}"
+      FORWARD_HEADERS: "${FORWARD_HEADERS:-none}"
+    volumes:
+      - "./config:/app/config:ro"
+    ports: ["127.0.0.1:8080:8080"]
+    depends_on:
+      db: { condition: service_healthy }
+      agendamento-api: { condition: service_healthy }
+      seed: { condition: service_completed_successfully }
+    restart: on-failure:5
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [backend, edge]
+
+networks:
+  backend: { internal: true }                # sem saída para a internet
+  edge: {}                                   # portas publicadas e saída para a Meta e a Anthropic
+
+volumes:
+  pgdata: {}
