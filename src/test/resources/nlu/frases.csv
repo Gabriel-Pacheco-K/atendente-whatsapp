@@ -1,0 +1,100 @@
+frase;intencao;servico;profissional;data;hora
+qro agnedar um corte amanha as 3 da tarde c/ o joao;BOOK;Corte masculino;João Batista;2026-10-14;15:00
+quero agendar um corte;BOOK;Corte masculino;;;
+quero marcar barba sexta 10h com o pedro;BOOK;Barba;Pedro Henrique;2026-10-16;10:00
+corte sexta 10h com o pedro;BOOK;Corte masculino;Pedro Henrique;2026-10-16;10:00
+tem horario sabado de manha pra barba?;BOOK;Barba;;2026-10-17;
+tem vaga hoje a tarde?;BOOK;;;2026-10-13;
+da pra encaixar um corte amanha?;BOOK;Corte masculino;;2026-10-14;
+queria cortar o cabelo amanha de manha;BOOK;Corte masculino;;2026-10-14;
+quero fazer a barba com o joao na quinta as 4;BOOK;Barba;João Batista;2026-10-15;16:00
+marcar corte e barba dia 20 as 15h;BOOK;Corte + barba;;2026-10-20;15:00
+quero um combo sexta que vem;BOOK;Corte + barba;;2026-10-16;
+agendar sobrancelha 20/10 as 10:30;BOOK;Sobrancelha;;2026-10-20;10:30
+reservar um horario pra amanha 9 da manha;BOOK;;;2026-10-14;09:00
+tem horario depois do almoco?;BOOK;;;;
+quero cortar com o pedro;BOOK;Corte masculino;Pedro Henrique;;
+corte amanha com qualquer um;BOOK;Corte masculino;;2026-10-14;
+barba sabado;BOOK;Barba;;2026-10-17;
+sexta as 16h;BOOK;;;2026-10-16;16:00
+vc tem horario hj?;BOOK;;;2026-10-13;
+quero marcar pra terca que vem;BOOK;;;2026-10-20;
+quero marcar sexta da semana que vem;BOOK;;;2026-10-23;
+quero marcar dia 5;BOOK;;;2026-11-05;
+quero marcar 20 de outubro;BOOK;;;2026-10-20;
+quero marcar um corte meio dia;BOOK;Corte masculino;;;12:00
+tres e meia da tarde da pra?;BOOK;;;;15:30
+oi, quero agendar;BOOK;;;;
+bom dia, queria marcar um degrade;BOOK;Corte masculino;;;
+cortar o cabelo depois de amanha;BOOK;Corte masculino;;2026-10-15;
+quero aparar a barba;BOOK;Barba;;;
+corte com o joaoo;BOOK;Corte masculino;João Batista;;
+corte com o pedor amanha;BOOK;Corte masculino;Pedro Henrique;2026-10-14;
+sabdo de manha tem vaga?;BOOK;;;2026-10-17;
+amanah as 10h;BOOK;;;2026-10-14;10:00
+quinat feira as 15:30;BOOK;;;2026-10-15;15:30
+barva com o joao;BOOK;Barba;João Batista;;
+marcar sabado as 9 com o joao;BOOK;;João Batista;2026-10-17;09:00
+sombrancelha amanha;BOOK;Sobrancelha;;2026-10-14;
+quanto custa a barba?;PRICES;Barba;;;
+qual o valor do corte?;PRICES;Corte masculino;;;
+quanto ta o corte e barba?;PRICES;Corte + barba;;;
+precos;PRICES;;;;
+tabela de precos;PRICES;;;;
+qto custa;PRICES;;;;
+quais servicos voces fazem?;PRICES;;;;
+onde fica?;ADDRESS;;;;
+onde fica a barbearia?;ADDRESS;;;;
+qual o endereco?;ADDRESS;;;;
+como chego ai?;ADDRESS;;;;
+qual o endereso de voces;ADDRESS;;;;
+que horas abre?;OPENING_HOURS;;;;
+qual o horario de funcionamento?;OPENING_HOURS;;;;
+que horas fecha no sabado?;OPENING_HOURS;;;2026-10-17;
+ate que horas fica aberto?;OPENING_HOURS;;;;
+quero falar com uma pessoa;HUMAN;;;;
+atendente;HUMAN;;;;
+atendnte por favor;HUMAN;;;;
+falar com alguem por favor;HUMAN;;;;
+quero falar com o gerente;HUMAN;;;;
+preciso desmarcar;CANCEL_BOOKING;;;;
+quero cancelar meu horario;CANCEL_BOOKING;;;;
+cancelra o agendamento;CANCEL_BOOKING;;;;
+nao vou poder ir amanha;CANCEL_BOOKING;;;2026-10-14;
+preciso desmarcar o de amanha;CANCEL_BOOKING;;;2026-10-14;
+quero remarcar;CANCEL_BOOKING;;;;
+dsmarcar;CANCEL_BOOKING;;;;
+meus agendamentos;MY_BOOKINGS;;;;
+qual meu horario?;MY_BOOKINGS;;;;
+ja agendei?;MY_BOOKINGS;;;;
+tenho horario marcado?;MY_BOOKINGS;;;;
+menu;RESTART;;;;
+quero comecar de novo;RESTART;;;;
+sair;RESTART;;;;
+sim;AFFIRM;;;;
+pode ser;AFFIRM;;;;
+siiim;AFFIRM;;;;
+👍;AFFIRM;;;;
+ok;AFFIRM;;;;
+s;AFFIRM;;;;
+nao;DENY;;;;
+n;DENY;;;;
+nao quero agendar;DENY;;;;
+nao quero mais marcar;DENY;;;;
+obrigado;THANKS;;;;
+valeu!;THANKS;;;;
+muito obrigada;THANKS;;;;
+obg;THANKS;;;;
+oiii;GREETING;;;;
+boa tarde;GREETING;;;;
+bom dia;GREETING;;;;
+e ai;GREETING;;;;
+eae;GREETING;;;;
+ola, tudo bem?;GREETING;;;;
+aceita pix?;FAQ;;;;
+tem estacionamento?;FAQ;;;;
+atende crianca?;FAQ;;;;
+pode pagar no cartao?;FAQ;;;;
+kkkkk xpto;UNKNOWN;;;;
+???;UNKNOWN;;;;
+asdfgh;UNKNOWN;;;;
