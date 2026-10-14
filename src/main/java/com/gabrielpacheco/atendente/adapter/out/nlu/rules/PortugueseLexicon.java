@@ -30,8 +30,9 @@ final class PortugueseLexicon {
                     weighted(BOOK, 3, "agendar", "marcar", "reservar", "tem horario", "tem vaga"),
                     weighted(BOOK, 2, "cortar", "vaga", "encaixe"),
                     weighted(BOOK, 1, "horario", "da para"),
-                    weighted(CANCEL_BOOKING, 3, "cancelar", "desmarcar", "remarcar", "mudar meu horario",
-                            "nao vou poder ir", "nao vou conseguir ir", "nao posso ir"),
+                    weighted(CANCEL_BOOKING, 3, "cancelar", "cancela", "desmarcar", "desmarca", "remarcar",
+                            "mudar meu horario", "mudar o horario", "nao vou poder ir", "nao vou conseguir ir",
+                            "nao posso ir"),
                     weighted(MY_BOOKINGS, 3, "meus agendamentos", "meu horario", "qual meu horario", "tenho horario"),
                     weighted(MY_BOOKINGS, 2, "ja agendei"),
                     weighted(PRICES, 3, "preco", "valor", "quanto e", "quanto ta", "quanto fica", "quanto custa"),
@@ -51,8 +52,10 @@ final class PortugueseLexicon {
                     weighted(AFFIRM, 3, "sim", "pode ser", "confirmo", "confirma"),
                     weighted(AFFIRM, 2, "isso", "pode", "ok", "beleza", "certo", "claro", "fechado", "bora", "uhum",
                             "aham", "perfeito"),
-                    weighted(DENY, 3, "nao", "negativo", "nao quero"),
-                    weighted(DENY, 2, "errado"),
+                    weighted(DENY, 3, "nao", "negativo", "nao quero", "esquece", "deixa para la", "deixa quieto",
+                            "pode deixar", "pode manter", "manter", "mantem", "mantenha", "outro dia", "outro horario",
+                            "outra data"),
+                    weighted(DENY, 2, "errado", "mudar", "trocar", "outro", "outra"),
                     weighted(THANKS, 4, "muito obrigado", "muito obrigada"),
                     weighted(THANKS, 3, "obrigado", "obrigada", "valeu", "agradeco"),
                     weighted(GREETING, 3, "bom dia", "boa tarde", "boa noite"),
@@ -91,7 +94,7 @@ final class PortugueseLexicon {
     static final Set<String> KNOWN_WORDS = Set.of(
             "barbeiro", "barbeiros", "barbearia", "barbearias", "cabeleireiro", "cabelos", "horarios", "agendamento",
             "agendado", "agendada", "marcado", "marcada", "cancelado", "cancelada", "reservado", "reservada",
-            "quando", "mais", "manda", "mande", "pessoal", "algum", "alguma", "lugar", "vale");
+            "quando", "mais", "manda", "mande", "pessoal", "algum", "alguma", "lugar", "vale", "esqueci");
 
     private PortugueseLexicon() {
     }

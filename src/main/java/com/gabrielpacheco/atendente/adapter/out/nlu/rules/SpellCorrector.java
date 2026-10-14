@@ -27,9 +27,6 @@ final class SpellCorrector {
     private record Candidate(String word, Source source) {
     }
 
-    private static final Comparator<Candidate> TIE_BREAK =
-            Comparator.comparing(Candidate::source).thenComparing(Candidate::word);
-
     private final Map<String, Source> vocabulary = new HashMap<>();
 
     SpellCorrector(Catalog catalog) {
@@ -61,7 +58,14 @@ final class SpellCorrector {
                 && !PortugueseLexicon.KNOWN_WORDS.contains(token);
     }
 
+    /**
+     * Em empate de distância, a fonte que vem primeiro e depois a palavra do mesmo tamanho: "cancelra" é "cancelar"
+     * com duas letras trocadas, não "cancela" com uma letra a mais.
+     */
     private String bestCandidate(String token) {
+        Comparator<Candidate> tieBreak = Comparator.comparing(Candidate::source)
+                .thenComparingInt((Candidate candidate) -> Math.abs(candidate.word().length() - token.length()))
+                .thenComparing(Candidate::word);
         int tolerance = EditDistance.typoTolerance(token.length());
         Candidate best = null;
         int bestDistance = Integer.MAX_VALUE;
@@ -72,7 +76,7 @@ final class SpellCorrector {
                 continue;
             }
             Candidate candidate = new Candidate(word, entry.getValue());
-            if (distance < bestDistance || (distance == bestDistance && TIE_BREAK.compare(candidate, best) < 0)) {
+            if (distance < bestDistance || (distance == bestDistance && tieBreak.compare(candidate, best) < 0)) {
                 best = candidate;
                 bestDistance = distance;
             }

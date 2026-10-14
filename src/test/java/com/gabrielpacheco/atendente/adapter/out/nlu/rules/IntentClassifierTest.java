@@ -74,6 +74,23 @@ class IntentClassifierTest {
         assertThat(classificar("ok valeu", Expectation.YES_NO).intent()).isEqualTo(AFFIRM);
     }
 
+    @ParameterizedTest(name = "\"{0}\" → {1}")
+    @CsvSource({
+            "pode cancelar, CANCEL_BOOKING",
+            "sim pode cancelar, CANCEL_BOOKING",
+            "ok me manda o menu, RESTART",
+            "pode ser quanto custa, PRICES",
+            "nao cancela, DENY",
+            "pode manter, DENY",
+            "ok esquece, UNKNOWN",
+            "sim pode marcar, AFFIRM",
+            "ok valeu, AFFIRM"
+    })
+    @DisplayName("Na confirmação, o sim só vale sozinho: outra pista, fora agendar e agradecer, é o que vale")
+    void naConfirmacaoOSimSoDeveValerSozinho(String texto, Intent esperada) {
+        assertThat(classificar(texto, Expectation.YES_NO).intent()).isEqualTo(esperada);
+    }
+
     @Test
     @DisplayName("Só com entidades e sem pista, a intenção é agendar com confiança 0,8")
     void soEntidadesDevemDarAgendamento() {

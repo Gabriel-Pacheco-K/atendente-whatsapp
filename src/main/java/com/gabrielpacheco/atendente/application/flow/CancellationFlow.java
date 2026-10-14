@@ -91,7 +91,8 @@ public class CancellationFlow {
         if (t.entities().yesNoConflict()) {
             return Optional.of(StepResult.of(state, Texts.yesOrNo()));
         }
-        if (t.intent() == Intent.AFFIRM) {
+        // "cancela" em resposta a "você quer cancelar?" também é um sim.
+        if (t.intent() == Intent.AFFIRM || t.intent() == Intent.CANCEL_BOOKING) {
             return Optional.of(cancel(t, state));
         }
         if (t.intent() == Intent.DENY) {

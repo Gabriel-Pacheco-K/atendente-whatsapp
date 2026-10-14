@@ -10,7 +10,9 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.ADDRESS;
@@ -48,6 +50,8 @@ final class IntentClassifier {
     private static final double ENTITIES_ONLY_CONFIDENCE = 0.8;
     private static final double CORRECTED_WORD_FACTOR = 0.9;
     private static final int NEGATION_REACH = 2;
+    /** Acompanham um sim ou um não sem mudar o sentido: "sim, pode marcar", "não, obrigado", "oi, pode ser". */
+    private static final Set<Intent> GO_WITH_AN_ANSWER = EnumSet.of(AFFIRM, DENY, BOOK, THANKS, GREETING);
 
     Classification classify(Correction text, Expectation expectation, Entities found, int faqKeywords) {
         Scoreboard board = new Scoreboard();
@@ -59,7 +63,7 @@ final class IntentClassifier {
             board.addCue(FAQ, FAQ_KEYWORD_WEIGHT * faqKeywords, false);
         }
         boolean conflict = board.score(AFFIRM) > 0 && board.score(DENY) > 0;
-        Intent intent = decide(board, conflict);
+        Intent intent = decide(board, conflict, expectation);
         return new Classification(intent, confidence(intent, board, conflict, expectation, found), conflict);
     }
 
@@ -69,7 +73,7 @@ final class IntentClassifier {
         for (Cue cue : PortugueseLexicon.CUES) {
             for (Spans.Range range : spans.consumeAll(cue.phrase())) {
                 boolean corrected = text.touches(range);
-                if (cue.intent() == BOOK && isNegated(range, negating)) {
+                if (isNegatable(cue) && isNegated(range, negating)) {
                     board.addCue(DENY, cue.weight(), corrected);
                 } else {
                     board.addCue(cue.intent(), weightIn(expectation, cue), corrected);
@@ -88,6 +92,11 @@ final class IntentClassifier {
         return negating;
     }
 
+    /** Agendar e cancelar podem ser negados; "nao vou poder ir" já é, em si, um pedido de cancelamento. */
+    private static boolean isNegatable(Cue cue) {
+        return cue.intent() == BOOK || cue.intent() == CANCEL_BOOKING && !cue.phrase().startsWith("nao ");
+    }
+
     /** "nao quero agendar" e "nao quero mais marcar" são recusas; em "nao sei se da para agendar", o "sei" quebra. */
     private static boolean isNegated(Spans.Range cue, Set<Integer> negating) {
         return IntStream.rangeClosed(1, NEGATION_REACH).anyMatch(back -> negating.contains(cue.start() - back));
@@ -98,13 +107,19 @@ final class IntentClassifier {
         return expectation == Expectation.YES_NO && yesOrNo ? cue.weight() * 2 : cue.weight();
     }
 
-    private static Intent decide(Scoreboard board, boolean conflict) {
+    private static Intent decide(Scoreboard board, boolean conflict, Expectation expectation) {
         Intent leader = board.leader();
         if (leader == null || board.score(leader) < MIN_WINNING_SCORE) {
             return UNKNOWN;
         }
-        if (conflict && (leader == AFFIRM || leader == DENY)) {
+        boolean yesOrNo = leader == AFFIRM || leader == DENY;
+        if (conflict && yesOrNo) {
             return UNKNOWN;
+        }
+        if (expectation == Expectation.YES_NO && yesOrNo) {
+            // Na confirmação, o sim (que agenda ou cancela) só vale sozinho: "pode cancelar" é cancelar, e
+            // "ok, me manda o menu" é o menu, por mais que o "pode" e o "ok" valham o dobro aqui.
+            return board.leaderAmong(intent -> !GO_WITH_AN_ANSWER.contains(intent)).orElse(leader);
         }
         return leader;
     }
@@ -177,9 +192,13 @@ final class IntentClassifier {
         }
 
         Intent leader() {
+            return leaderAmong(intent -> true).orElse(null);
+        }
+
+        Optional<Intent> leaderAmong(Predicate<Intent> eligible) {
             return scores.keySet().stream()
-                    .min(Comparator.comparingInt((Intent intent) -> -score(intent)).thenComparingInt(TIE_BREAK::indexOf))
-                    .orElse(null);
+                    .filter(eligible)
+                    .min(Comparator.comparingInt((Intent intent) -> -score(intent)).thenComparingInt(TIE_BREAK::indexOf));
         }
 
         boolean anyCue() {

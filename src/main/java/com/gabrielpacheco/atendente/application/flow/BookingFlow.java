@@ -122,14 +122,21 @@ public class BookingFlow {
         return Optional.empty();
     }
 
-    /** "sim" agenda; "não" volta para a escolha do dia; dados novos ("sim, mas às 16h") corrigem o resumo. */
+    /**
+     * "sim" agenda; "não" volta para a escolha do dia; dados novos ("sim, mas às 16h") corrigem o resumo. Um "sim"
+     * que só repete os dados do resumo ("sim, amanhã às 15h") continua sendo um sim.
+     */
     public Optional<StepResult> onConfirmingBooking(TurnContext t, ConfirmingBooking state) {
         Entities found = t.entities();
         if (found.yesNoConflict()) {
             return Optional.of(StepResult.of(state, Texts.yesOrNo()));
         }
         if (found.hasBookingData()) {
-            return advance(t, state.draft().merge(found));
+            BookingDraft merged = state.draft().merge(found);
+            if (t.intent() == Intent.AFFIRM && merged.equals(state.draft())) {
+                return Optional.of(confirmation.confirm(t, state));
+            }
+            return advance(t, merged);
         }
         if (t.intent() == Intent.DENY) {
             return Optional.of(StepResult.of(new ChoosingDate(state.draft().withoutDateAndTime()), Texts.declined()));

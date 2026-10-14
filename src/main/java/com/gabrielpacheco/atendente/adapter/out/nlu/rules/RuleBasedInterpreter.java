@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
  */
 public final class RuleBasedInterpreter implements MessageInterpreter {
 
-    private static final Pattern RESCHEDULE = Pattern.compile("\\b(?:remarcar|mudar meu horario)\\b");
+    private static final Pattern RESCHEDULE = Pattern.compile("\\b(?:remarcar|mudar (?:meu|o) horario)\\b");
     private static final Pattern WITH_BEFORE_NAME = Pattern.compile("\\bcom(?: [oa])? $");
 
     private record CatalogTools(Catalog catalog, CatalogMatcher matcher, SpellCorrector corrector) {
