@@ -78,7 +78,7 @@ passo "Agendamento de verdade na quarta $dia_e_mes às 10h com o João"
 cliente=$(nova_sessao "+55 48 99999-0001")
 esperar "$(dizer "$cliente" "quero cortar dia $dia_e_mes às 10h com o joão")" "Boa notícia"
 esperar "$(dizer "$cliente" "Ana Souza")" "Confirma o agendamento?"
-esperar "$(dizer "$cliente" "sim")" "Agendado, Teste!"
+esperar "$(dizer "$cliente" "sim")" "Agendado, Ana!"
 [[ $(status_na_agenda "Ana Souza" 10:00) == SCHEDULED ]] || falhar "o agendamento não está SCHEDULED na agenda"
 
 passo "Cancelamento pelo chat"
