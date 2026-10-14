@@ -100,9 +100,11 @@ class PtBrTest {
     }
 
     @Test
-    @DisplayName("Nomes curtos dos dias e maiúscula inicial")
+    @DisplayName("Nomes curtos e completos dos dias e maiúscula inicial")
     void deveNomearOsDias() {
         assertThat(PtBr.dayName(DayOfWeek.TUESDAY)).isEqualTo("terça");
+        assertThat(PtBr.weekdayName(DayOfWeek.TUESDAY)).isEqualTo("terça-feira");
+        assertThat(PtBr.weekdayName(DayOfWeek.SUNDAY)).isEqualTo("domingo");
         assertThat(PtBr.capitalize("sábado")).isEqualTo("Sábado");
         assertThat(PtBr.capitalize("")).isEmpty();
     }

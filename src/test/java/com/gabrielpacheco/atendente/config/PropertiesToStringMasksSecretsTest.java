@@ -1,5 +1,6 @@
 package com.gabrielpacheco.atendente.config;
 
+import com.gabrielpacheco.atendente.adapter.out.nlu.claude.ClaudeSettings;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.unit.DataSize;
@@ -40,6 +41,15 @@ class PropertiesToStringMasksSecretsTest {
                 "low", 2048, Duration.ofSeconds(6), "", 0.75);
 
         assertThat(claude.toString()).doesNotContain("sk-ant-chave-secreta").contains("***", "claude-haiku-5-5");
+    }
+
+    @Test
+    @DisplayName("As configurações do adaptador do Claude também escondem a chave")
+    void configuracoesDoClaudeDevemEsconderAChave() {
+        ClaudeSettings settings = new ClaudeSettings("sk-ant-chave-secreta", "claude-haiku-5-5", "low", 2048,
+                Duration.ofSeconds(6), "");
+
+        assertThat(settings.toString()).doesNotContain("sk-ant-chave-secreta").contains("***", "claude-haiku-5-5");
     }
 
     @Test

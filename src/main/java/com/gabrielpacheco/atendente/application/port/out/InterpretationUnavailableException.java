@@ -6,7 +6,11 @@ public class InterpretationUnavailableException extends RuntimeException {
     private final String reason;
 
     public InterpretationUnavailableException(String reason) {
-        super("Interpretação indisponível: " + reason);
+        this(reason, null);
+    }
+
+    public InterpretationUnavailableException(String reason, Throwable cause) {
+        super("Interpretação indisponível: " + reason, cause);
         this.reason = reason;
     }
 

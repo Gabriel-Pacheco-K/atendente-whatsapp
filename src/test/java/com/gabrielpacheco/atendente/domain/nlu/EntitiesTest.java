@@ -30,13 +30,37 @@ class EntitiesTest {
     @DisplayName("Ao mesclar, cada campo fica com o meu valor quando presente e com o do outro quando falta")
     void deveMesclarCampoACampo() {
         Entities minhas = new Entities(1L, null, false, null, null, QUINZE_HORAS, null, null, null, false, false);
-        Entities outras = new Entities(2L, 1L, true, LocalDate.of(2026, 10, 14), null, null, 3, null, "pix", true,
+        Entities outras = new Entities(2L, 1L, false, LocalDate.of(2026, 10, 14), null, null, 3, null, "pix", true,
                 false);
 
         Entities mescladas = minhas.or(outras);
 
-        assertThat(mescladas).isEqualTo(new Entities(1L, 1L, true, LocalDate.of(2026, 10, 14), null, QUINZE_HORAS,
+        assertThat(mescladas).isEqualTo(new Entities(1L, 1L, false, LocalDate.of(2026, 10, 14), null, QUINZE_HORAS,
                 3, null, "pix", true, false));
+    }
+
+    @Test
+    @DisplayName("Ao mesclar, o profissional e o \"tanto faz\" andam juntos")
+    void profissionalETantoFazDevemAndarJuntos() {
+        Entities comPedro = new Entities(null, 2L, false, null, null, null, null, null, null, false, false);
+        Entities tantoFaz = new Entities(null, null, true, null, null, null, null, null, null, false, false);
+
+        assertThat(comPedro.or(tantoFaz)).isEqualTo(comPedro);
+        assertThat(tantoFaz.or(comPedro)).isEqualTo(tantoFaz);
+        assertThat(Entities.none().or(comPedro)).isEqualTo(comPedro);
+    }
+
+    @Test
+    @DisplayName("Ao mesclar, a data e o problema de data andam juntos")
+    void dataEProblemaDeDataDevemAndarJuntos() {
+        Entities comData = new Entities(null, null, false, LocalDate.of(2026, 10, 20), null, null, null, null, null,
+                false, false);
+        Entities comProblema = new Entities(null, null, false, null, DateIssue.INVALID, null, null, null, null, false,
+                false);
+
+        assertThat(comData.or(comProblema).dateIssue()).isNull();
+        assertThat(comProblema.or(comData).date()).isNull();
+        assertThat(Entities.none().or(comProblema).dateIssue()).isEqualTo(DateIssue.INVALID);
     }
 
     @Test

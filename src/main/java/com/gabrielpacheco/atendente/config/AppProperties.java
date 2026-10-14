@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -29,7 +30,7 @@ public record AppProperties(@NotNull ZoneId timezone,
                             @Valid @NotNull Retention retention) {
 
     /**
-     * @param turnBudget tempo máximo de um turno com a conversa travada; precisa ser maior que o read timeout da
+     * @param turnBudget tempo máximo das consultas à agenda num turno; precisa ser maior que o read timeout da
      *                   agenda, ou nenhuma consulta caberia nele
      */
     public record Conversation(@NotNull Duration expiresAfter,
@@ -98,10 +99,11 @@ public record AppProperties(@NotNull ZoneId timezone,
     public record Ai(@Valid @NotNull Claude claude) {
     }
 
+    /** @param effort um dos valores que a API aceita; um erro de digitação faria toda chamada voltar 400 */
     public record Claude(boolean enabled,
                          String apiKey,
                          @NotBlank String model,
-                         @NotBlank String effort,
+                         @NotNull @Pattern(regexp = "low|medium|high|xhigh|max") String effort,
                          @Positive int maxTokens,
                          @NotNull Duration timeout,
                          String baseUrl,

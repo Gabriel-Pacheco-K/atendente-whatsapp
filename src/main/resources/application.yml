@@ -27,7 +27,7 @@ management:
 
 app:
   timezone: ${APP_TIMEZONE:America/Sao_Paulo}
-  # turn-budget limita o tempo com a conversa travada: nenhuma consulta à agenda começa sem caber nele.
+  # turn-budget limita as consultas à agenda num turno, com a conversa travada: nenhuma começa sem caber nele.
   conversation: { expires-after: 30m, duplicate-confirmation-window: 2m, max-slot-options: 6, next-day-search-days: 6, turn-budget: 8s }
   # min-advance espelha a antecedência mínima do agendamento-api, para explicar por que um horário não serve.
   booking: { days-ahead: 30, max-active-per-customer: 3, min-advance: 30m }

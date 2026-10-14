@@ -17,10 +17,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.GeneralCodingRules.NO_CLASSES_SHOULD_ACCESS_STANDARD_STREAMS;
 
-/**
- * Portas e adaptadores de verdade: estas regras quebram o build quando uma dependência atravessa a fronteira errada.
- * Regras cujo alvo ainda não tem classes usam {@code allowEmptyShould(true)}, para não reprovarem por falta do que checar.
- */
+/** Portas e adaptadores de verdade: as regras quebram o build quando uma dependência atravessa a fronteira errada. */
 @DisplayName("Arquitetura")
 class ArchitectureTest {
 
@@ -74,7 +71,6 @@ class ArchitectureTest {
                 .check(CLASSES);
         noClasses().that().resideInAPackage("..adapter.out.nlu.claude..")
                 .should().dependOnClassesThat().resideInAPackage("..adapter.out.nlu.rules..")
-                .allowEmptyShould(true)
                 .check(CLASSES);
     }
 
@@ -84,7 +80,6 @@ class ArchitectureTest {
         classes().that().resideInAPackage("..adapter.out.nlu")
                 .should().onlyDependOnClassesThat().resideInAnyPackage(
                         "java..", "..domain..", "..application.port..", "..adapter.out.nlu", "org.slf4j..")
-                .allowEmptyShould(true)
                 .check(CLASSES);
     }
 

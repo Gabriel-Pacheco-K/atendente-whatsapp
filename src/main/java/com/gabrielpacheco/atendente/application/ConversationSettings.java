@@ -10,7 +10,7 @@ import java.time.ZoneId;
  * @param duplicateConfirmationWindow por quanto tempo um "sim" repetido recebe "já está confirmado"
  * @param nextDaySearchDays           quantos dias depois do pedido procurar quando ele não tem horário
  * @param daysAhead                   até quantos dias à frente oferecer horários
- * @param turnBudget                  tempo máximo de um turno; nenhuma chamada à agenda começa sem caber nele
+ * @param turnBudget                  tempo para as chamadas à agenda num turno; nenhuma começa sem caber nele
  * @param schedulingCallTimeout       o quanto uma chamada à agenda pode levar no pior caso (o read timeout)
  * @param maxCallsPerTurn             teto de consultas de disponibilidade num turno
  * @param minAdvance                  antecedência mínima que a agenda exige para marcar

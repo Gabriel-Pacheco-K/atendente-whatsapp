@@ -87,6 +87,15 @@ class CatalogMatcherTest {
     }
 
     @Test
+    @DisplayName("Encontra o profissional pelo nome completo ou pelo primeiro nome, sem tolerar erros")
+    void deveBuscarProfissionalPeloNome() {
+        assertThat(matcher.professionalByName("Pedro Henrique")).contains(PEDRO);
+        assertThat(matcher.professionalByName("JOAO")).contains(JOAO);
+        assertThat(matcher.professionalByName("Pedor")).isEmpty();
+        assertThat(matcher.professionalByName("Carlos")).isEmpty();
+    }
+
+    @Test
     @DisplayName("O catálogo encontra serviço e profissional pelo id")
     void deveBuscarPeloId() {
         Catalog catalogo = Barbearia.catalogo();

@@ -47,11 +47,14 @@ public final class PtBr {
         return String.format(Locale.ROOT, "%02d/%02d", date.getDayOfMonth(), date.getMonthValue());
     }
 
+    /** "quarta-feira" ou "sábado". */
+    public static String weekdayName(DayOfWeek day) {
+        return isWeekend(day) ? dayName(day) : dayName(day) + "-feira";
+    }
+
     /** "quarta-feira, 14/10" ou "sábado, 17/10". */
     public static String longDate(LocalDate date) {
-        DayOfWeek day = date.getDayOfWeek();
-        String weekday = isWeekend(day) ? dayName(day) : dayName(day) + "-feira";
-        return weekday + ", " + dayMonth(date);
+        return weekdayName(date.getDayOfWeek()) + ", " + dayMonth(date);
     }
 
     /** "qua 14/10 15:00", para rótulos curtos. */

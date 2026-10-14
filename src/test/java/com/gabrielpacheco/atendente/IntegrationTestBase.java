@@ -2,7 +2,6 @@ package com.gabrielpacheco.atendente;
 
 import com.gabrielpacheco.atendente.adapter.in.http.RateLimiter;
 import com.gabrielpacheco.atendente.adapter.in.web.ChatRateLimits;
-import com.gabrielpacheco.atendente.adapter.out.nlu.rules.RuleBasedInterpreter;
 import com.gabrielpacheco.atendente.application.CatalogProvider;
 import com.gabrielpacheco.atendente.application.port.out.ConversationStore;
 import com.gabrielpacheco.atendente.application.port.out.MessageInterpreter;
@@ -18,6 +17,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -29,6 +29,9 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.doThrow;
 
 /**
  * Base dos testes com Spring: PostgreSQL real e WireMock para a agenda e para a Graph API.
@@ -76,6 +79,10 @@ public abstract class IntegrationTestBase {
     @Autowired
     protected ConversationStoreComFalha conversas;
 
+    /** O interpretador de verdade, que falha de propósito quando o texto contém {@link #ERRO_PROPOSITAL}. */
+    @SpyBean
+    private MessageInterpreter interpretador;
+
     @DynamicPropertySource
     static void servicosExternos(DynamicPropertyRegistry registry) {
         registry.add("app.scheduling-api.base-url", AGENDA::baseUrl);
@@ -94,6 +101,8 @@ public abstract class IntegrationTestBase {
         limitesDoChat.ifAvailable(ChatRateLimits::reset);
         limiteDoWhatsApp.ifAvailable(RateLimiter::reset);
         conversas.voltarAoNormal();
+        doThrow(new IllegalStateException("Falha proposital do teste"))
+                .when(interpretador).interpret(contains(ERRO_PROPOSITAL), any());
     }
 
     protected static AgendaHttp agenda() {
@@ -114,18 +123,6 @@ public abstract class IntegrationTestBase {
         ConversationStoreComFalha conversationStoreComFalha(
                 @Qualifier("jpaConversationStore") ConversationStore real) {
             return new ConversationStoreComFalha(real);
-        }
-
-        @Bean
-        @Primary
-        MessageInterpreter interpretadorQueFalhaDeProposito() {
-            RuleBasedInterpreter regras = new RuleBasedInterpreter();
-            return (texto, contexto) -> {
-                if (texto.contains(ERRO_PROPOSITAL)) {
-                    throw new IllegalStateException("Falha proposital do teste");
-                }
-                return regras.interpret(texto, contexto);
-            };
         }
     }
 }

@@ -111,8 +111,15 @@
                         <!-- O Docker 29 recusa a versão de API que o docker-java usa por padrão. -->
                         <api.version>1.44</api.version>
                     </systemPropertyVariables>
-                    <!-- Garante que nenhum teste chame a API paga por acidente. -->
-                    <excludedEnvironmentVariables>ANTHROPIC_API_KEY</excludedEnvironmentVariables>
+                    <!-- Nenhum teste chama a API paga por acidente, e as variáveis do Claude na máquina não mudam
+                         o resultado dos testes. -->
+                    <excludedEnvironmentVariables>
+                        <variable>ANTHROPIC_API_KEY</variable>
+                        <variable>ANTHROPIC_BASE_URL</variable>
+                        <variable>CLAUDE_ENABLED</variable>
+                        <variable>CLAUDE_MODEL</variable>
+                        <variable>CLAUDE_EFFORT</variable>
+                    </excludedEnvironmentVariables>
                     <!-- O @{argLine} traz o javaagent do JaCoCo; o Mockito se anexa à JVM em tempo de execução. -->
                     <argLine>@{argLine} -XX:+EnableDynamicAgentLoading</argLine>
                 </configuration>

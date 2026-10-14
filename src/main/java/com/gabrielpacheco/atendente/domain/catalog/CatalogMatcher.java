@@ -49,6 +49,15 @@ public final class CatalogMatcher {
                 .findFirst();
     }
 
+    /** Nome completo ou primeiro nome, sem tolerar erros: serve para conferir um nome vindo de fora. */
+    public Optional<Professional> professionalByName(String anyCase) {
+        String wanted = TextNormalizer.normalize(anyCase).text();
+        return catalog.professionals().stream()
+                .filter(professional -> TextNormalizer.normalize(professional.name()).text().equals(wanted)
+                        || TextNormalizer.normalize(professional.firstName()).text().equals(wanted))
+                .findFirst();
+    }
+
     private Optional<Hit<Professional>> firstNameWithTypo(String normalized) {
         Matcher word = WORD.matcher(normalized);
         while (word.find()) {

@@ -6,6 +6,10 @@
   const CHAVE_DA_SESSAO = 'atendente.sessao';
   const ESPERAS_ENTRE_TENTATIVAS_MS = [1000, 2000];
 
+  const SELOS_DO_INTERPRETADOR = {
+    RULES: 'Entendimento: motor próprio (sem IA paga)',
+    RULES_WITH_CLAUDE: 'Entendimento: motor próprio + Claude quando há dúvida'
+  };
   const NOMES_DO_INTERPRETADOR = {
     RULES: 'motor de regras',
     CLAUDE: 'Claude',
@@ -267,7 +271,11 @@
       const negocio = await resposta.json();
       elementos.nome.textContent = negocio.name;
       document.title = negocio.name + ' · atendimento';
-      elementos.selo.hidden = negocio.interpreter !== 'RULES';
+      const selo = SELOS_DO_INTERPRETADOR[negocio.interpreter];
+      elementos.selo.hidden = !selo;
+      if (selo) {
+        elementos.selo.textContent = selo;
+      }
     } catch (e) {
       // O cabeçalho continua com o nome padrão.
     }

@@ -22,14 +22,19 @@ public record Entities(Long serviceId, Long professionalId, boolean anyProfessio
                 || date != null || dateIssue != null || time != null;
     }
 
-    /** Campo a campo: o meu valor quando presente, senão o do {@code fallback}. */
+    /**
+     * Campo a campo: o meu valor quando presente, senão o do {@code fallback}. Dois pares andam juntos, para o
+     * resultado não se contradizer: o profissional e o "tanto faz", e a data e o problema de data.
+     */
     public Entities or(Entities fallback) {
+        boolean mentionsProfessional = professionalId != null || anyProfessional;
+        boolean mentionsDate = date != null || dateIssue != null;
         return new Entities(
                 firstPresent(serviceId, fallback.serviceId),
-                firstPresent(professionalId, fallback.professionalId),
-                anyProfessional || fallback.anyProfessional,
-                firstPresent(date, fallback.date),
-                firstPresent(dateIssue, fallback.dateIssue),
+                mentionsProfessional ? professionalId : fallback.professionalId,
+                mentionsProfessional ? anyProfessional : fallback.anyProfessional,
+                mentionsDate ? date : fallback.date,
+                mentionsDate ? dateIssue : fallback.dateIssue,
                 firstPresent(time, fallback.time),
                 firstPresent(option, fallback.option),
                 firstPresent(personName, fallback.personName),

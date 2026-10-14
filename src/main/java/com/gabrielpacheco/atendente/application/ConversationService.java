@@ -82,7 +82,6 @@ public class ConversationService implements HandleIncomingMessage {
         }
         Instant now = clock.instant();
         LocalDateTime localNow = LocalDateTime.ofInstant(now, settings.zone());
-        Deadline deadline = Deadline.after(settings.turnBudget(), clock);
         boolean expired = conversation.isExpired(now, settings.expiresAfter());
         if (expired) {
             conversation.clearMisunderstandings();
@@ -98,6 +97,9 @@ public class ConversationService implements HandleIncomingMessage {
             catalog = catalogProvider.current();
             ConversationState effective = expired ? Idle.EMPTY : conversation.state();
             interpretation = interpreter.interpret(message.text(), context(effective, catalog, localNow));
+            // O prazo da agenda começa depois da interpretação, que tem o próprio timeout: uma interpretação lenta
+            // não pode deixar a agenda sem tempo.
+            Deadline deadline = Deadline.after(settings.turnBudget(), clock);
             result = router.route(new TurnContext(conversation, customer, message, interpretation, catalog, now,
                     localNow, expired, deadline));
         }
