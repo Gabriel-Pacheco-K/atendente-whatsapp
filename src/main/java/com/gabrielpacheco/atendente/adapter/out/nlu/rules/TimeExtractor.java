@@ -34,13 +34,16 @@ final class TimeExtractor {
 
     /**
      * Hora em dígitos ou por extenso, com minutos opcionais (":30", "h30", "e meia") e período opcional ("da tarde").
-     * Sem "às", sem minutos, sem "h" e sem período, um número sozinho não é hora.
+     * Sem "às", sem minutos, sem "h", sem "e meia" e sem período, um número sozinho não é hora. O número de uma data
+     * também não: nem o mês de "20/10", nem o dia de "dia 20", nem o "20" de "15h 20/10".
      */
     private static final Pattern CLOCK = Pattern.compile(
-            "(?<as>\\bas\\s+)?\\b(?<hour>\\d{1,2}|" + longestFirst(HOUR_WORDS.keySet()) + ")(?![/-]\\d)"
-                    + "(?:(?<colon>:(?<colonMinutes>\\d{2}))|\\s*(?<suffix>h|hs|hrs?|horas?)(?:\\s*(?<suffixMinutes>\\d{2}))?)?"
+            "(?<as>\\bas\\s+)?\\b(?<![/:-])(?<!\\bdia\\s)(?<hour>\\d{1,2}|" + longestFirst(HOUR_WORDS.keySet())
+                    + ")(?![/-]\\d)"
+                    + "(?:(?<colon>:(?<colonMinutes>\\d{2})(?:hs?|hrs?)?)|\\s*(?<suffix>h|hs|hrs?|horas?)(?<suffixMinutes>\\d{2})?)?"
                     + "(?:\\s+e\\s+(?<half>meia|[0-5]\\d))?"
                     + "(?:\\s+d[ae]\\s+(?<period>manha|tarde|noite))?\\b");
+    private static final String HALF_HOUR = "meia";
 
     private static final Map<Pattern, PartOfDay> PERIODS = Map.of(
             Pattern.compile("\\b(?:de|pela) manha\\b|\\bcedo\\b"), PartOfDay.MORNING,
@@ -95,9 +98,10 @@ final class TimeExtractor {
     }
 
     private static Optional<LocalTime> toTime(MatchResult match) {
-        boolean afterAs = match.group("as") != null;
+        // "às 4" e "4 e meia" são o jeito de falar a hora; "4h" e "4:30" dizem que é hora, mas não que é de tarde.
+        boolean spoken = match.group("as") != null || HALF_HOUR.equals(match.group("half"));
         String period = match.group("period");
-        if (!afterAs && period == null && match.group("colon") == null && match.group("suffix") == null) {
+        if (!spoken && period == null && match.group("colon") == null && match.group("suffix") == null) {
             return Optional.empty();
         }
         String hourText = match.group("hour");
@@ -108,7 +112,7 @@ final class TimeExtractor {
         if (period != null) {
             boolean laterInTheDay = period.equals("tarde") || period.equals("noite");
             hour = laterInTheDay && hour >= 1 && hour <= 11 ? hour + 12 : hour;
-        } else if (afterAs && hour >= 1 && hour <= LAST_HOUR_READ_AS_AFTERNOON) {
+        } else if (spoken && hour >= 1 && hour <= LAST_HOUR_READ_AS_AFTERNOON) {
             hour += 12;
         }
         int minute = minutes(match);
@@ -123,7 +127,7 @@ final class TimeExtractor {
                 .map(match::group)
                 .filter(Objects::nonNull)
                 .findFirst()
-                .map(value -> value.equals("meia") ? 30 : Integer.parseInt(value))
+                .map(value -> value.equals(HALF_HOUR) ? 30 : Integer.parseInt(value))
                 .orElse(0);
     }
 

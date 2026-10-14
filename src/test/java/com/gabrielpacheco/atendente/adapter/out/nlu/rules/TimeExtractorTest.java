@@ -51,7 +51,11 @@ class TimeExtractorTest {
             "as 10, 10:00",
             "as 10 e meia, 10:30",
             "as duas, 14:00",
-            "amanha as 15h, 15:00"
+            "amanha as 15h, 15:00",
+            "as 14:30h, 14:30",
+            "10 e meia, 10:30",
+            "dez e meia, 10:30",
+            "3 e meia, 15:30"
     })
     @DisplayName("Lê horários escritos de vários jeitos")
     void deveLerOHorario(String texto, LocalTime esperado) {
@@ -81,6 +85,30 @@ class TimeExtractorTest {
     @DisplayName("Reconhece períodos do dia")
     void deveReconhecerPeriodos(String texto, PartOfDay periodo) {
         assertThat(extrair(texto)).contains(new Period(periodo));
+    }
+
+    @ParameterizedTest(name = "\"{0}\" deixa \"{1}\" para a data")
+    @CsvSource({
+            "20/10 de tarde, 20/10",
+            "20-10 de tarde, 20-10",
+            "dia 20 de tarde, dia 20",
+            "sexta dia 16 de manha, dia 16",
+            "15h 20/10, 20/10"
+    })
+    @DisplayName("Não consome o número de uma data")
+    void naoDeveConsumirONumeroDeUmaData(String texto, String data) {
+        Spans spans = spans(texto);
+
+        extrator.extract(spans, Barbearia.contexto(Expectation.NONE));
+
+        assertThat(spans.remaining()).contains(data);
+    }
+
+    @Test
+    @DisplayName("\"15h 20/10\" é 15:00, e o dia da data não vira minuto")
+    void diaDaDataNaoDeveVirarMinuto() {
+        assertThat(extrair("15h 20/10")).contains(new Exact(LocalTime.of(15, 0)));
+        assertThat(extrair("20/10 de tarde")).contains(new Period(PartOfDay.AFTERNOON));
     }
 
     @Test
