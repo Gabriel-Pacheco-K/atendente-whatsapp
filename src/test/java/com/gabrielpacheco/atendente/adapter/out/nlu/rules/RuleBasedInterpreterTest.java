@@ -6,6 +6,7 @@ import com.gabrielpacheco.atendente.domain.nlu.Interpretation;
 import com.gabrielpacheco.atendente.domain.nlu.InterpreterKind;
 import com.gabrielpacheco.atendente.domain.nlu.TimePreference;
 import com.gabrielpacheco.atendente.fixtures.Barbearia;
+import com.gabrielpacheco.atendente.fixtures.Entidades;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -41,9 +42,8 @@ class RuleBasedInterpreterTest {
         assertThat(resultado.intent()).isEqualTo(BOOK);
         assertThat(resultado.confidence()).isCloseTo(0.9, within(1e-9));
         assertThat(resultado.interpretedBy()).isEqualTo(InterpreterKind.RULES);
-        assertThat(resultado.entities()).isEqualTo(new Entities(CORTE.id(), JOAO.id(), false,
-                LocalDate.of(2026, 10, 14), null, new TimePreference.Exact(LocalTime.of(15, 0)), null, null, null,
-                false, false));
+        assertThat(resultado.entities()).isEqualTo(Entidades.com().servico(CORTE).profissional(JOAO)
+                .data(LocalDate.of(2026, 10, 14)).hora("15:00").montar());
     }
 
     @Test

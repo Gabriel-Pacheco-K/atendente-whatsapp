@@ -11,15 +11,14 @@ import com.gabrielpacheco.atendente.domain.nlu.Intent;
 import com.gabrielpacheco.atendente.domain.nlu.Interpretation;
 import com.gabrielpacheco.atendente.domain.nlu.InterpretationContext;
 import com.gabrielpacheco.atendente.domain.nlu.InterpreterKind;
-import com.gabrielpacheco.atendente.domain.nlu.TimePreference;
 import com.gabrielpacheco.atendente.fixtures.Ambiente;
 import com.gabrielpacheco.atendente.fixtures.Dialogo;
+import com.gabrielpacheco.atendente.fixtures.Entidades;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +40,7 @@ class ClaudeDialogTest {
     @Test
     @DisplayName("O que as regras não entendem segue com o que o Claude entendeu")
     void fraseQueAsRegrasNaoEntendemDeveSeguirComOClaude() {
-        claude.entende(new Entities(CORTE.id(), null, false, null, null, null, null, null, null, false, false));
+        claude.entende(Entidades.com().servico(CORTE).montar());
 
         dialogo.cliente(GIRIA).atendenteDiz("Com quem você prefere?").estadoE(ChoosingProfessional.class);
 
@@ -53,7 +52,7 @@ class ClaudeDialogTest {
     @DisplayName("Um Claude lento não tira o tempo da agenda: os horários ainda são consultados")
     void claudeLentoNaoDeveTirarOTempoDaAgenda() {
         claude.demora(Duration.ofSeconds(6));
-        claude.entende(new Entities(CORTE.id(), JOAO.id(), false, QUARTA, null, null, null, null, null, false, false));
+        claude.entende(Entidades.com().servico(CORTE).profissional(JOAO).data(QUARTA).montar());
 
         dialogo.cliente(GIRIA).atendenteDiz("Horários livres na *quarta-feira, 14/10*").estadoE(ChoosingSlot.class);
     }
@@ -61,8 +60,7 @@ class ClaudeDialogTest {
     @Test
     @DisplayName("Na confirmação, mesmo uma resposta confusa fica com as regras, e o \"sim\" agenda sem o Claude")
     void confirmacaoNaoDeveChamarOClaude() {
-        claude.entende(new Entities(CORTE.id(), JOAO.id(), false, QUARTA,
-                null, new TimePreference.Exact(LocalTime.of(15, 0)), null, null, null, false, false));
+        claude.entende(Entidades.com().servico(CORTE).profissional(JOAO).data(QUARTA).hora("15:00").montar());
         dialogo.cliente(GIRIA).cliente("Gabriel Pacheco").estadoE(ConfirmingBooking.class);
 
         dialogo.cliente("quem sabe, talvez").atendenteDiz("Responda *sim* ou *não*").estadoE(ConfirmingBooking.class);

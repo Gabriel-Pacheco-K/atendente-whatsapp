@@ -5,6 +5,7 @@ import com.gabrielpacheco.atendente.domain.nlu.Entities;
 import com.gabrielpacheco.atendente.domain.nlu.Expectation;
 import com.gabrielpacheco.atendente.domain.nlu.Intent;
 import com.gabrielpacheco.atendente.domain.text.TextNormalizer;
+import com.gabrielpacheco.atendente.fixtures.Entidades;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,10 +25,8 @@ import static org.assertj.core.api.Assertions.within;
 @DisplayName("Classificação de intenções")
 class IntentClassifierTest {
 
-    private static final Entities COM_DATA =
-            new Entities(null, null, false, LocalDate.of(2026, 10, 16), null, null, null, null, null, false, false);
-    private static final Entities COM_SERVICO =
-            new Entities(2L, null, false, null, null, null, null, null, null, false, false);
+    private static final Entities COM_DATA = Entidades.com().data(LocalDate.of(2026, 10, 16)).montar();
+    private static final Entities COM_SERVICO = Entidades.com().servico(2L).montar();
 
     private final IntentClassifier classificador = new IntentClassifier();
 

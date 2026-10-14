@@ -10,6 +10,7 @@ import com.gabrielpacheco.atendente.domain.nlu.InterpreterKind;
 import com.gabrielpacheco.atendente.domain.nlu.PartOfDay;
 import com.gabrielpacheco.atendente.domain.nlu.TimePreference;
 import com.gabrielpacheco.atendente.fixtures.Barbearia;
+import com.gabrielpacheco.atendente.fixtures.Entidades;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Optional;
 
 import static com.gabrielpacheco.atendente.fixtures.Barbearia.BARBA;
@@ -50,9 +50,9 @@ class ClaudeInterpreterTest {
 
             Interpretation resultado = claude.interpret("aquela de sexta cedinho com o pedro", TRES_HORARIOS);
 
-            assertThat(resultado).isEqualTo(new Interpretation(Intent.BOOK, 0.92, new Entities(BARBA.id(), PEDRO.id(),
-                    false, LocalDate.of(2026, 10, 16), null, new TimePreference.Exact(LocalTime.of(9, 30)), 2, null,
-                    null, false, false), InterpreterKind.CLAUDE));
+            assertThat(resultado).isEqualTo(new Interpretation(Intent.BOOK, 0.92, Entidades.com().servico(BARBA)
+                    .profissional(PEDRO).data(LocalDate.of(2026, 10, 16)).hora("09:30").opcao(2).montar(),
+                    InterpreterKind.CLAUDE));
         }
 
         @Test

@@ -10,6 +10,7 @@ import com.gabrielpacheco.atendente.domain.nlu.InterpretationContext;
 import com.gabrielpacheco.atendente.domain.nlu.InterpreterKind;
 import com.gabrielpacheco.atendente.fixtures.Barbearia;
 import com.gabrielpacheco.atendente.fixtures.CapturaDeLogs;
+import com.gabrielpacheco.atendente.fixtures.Entidades;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -77,8 +78,8 @@ class HybridInterpreterTest {
     @Test
     @DisplayName("Com as regras em dúvida, a intenção segura do Claude vale e as entidades se completam")
     void regrasIncertasDevemMesclarComOClaude() {
-        Entities soAData = new Entities(null, null, false, SEXTA, null, null, null, null, null, false, false);
-        Entities soOServico = new Entities(BARBA.id(), null, false, null, null, null, null, null, null, false, false);
+        Entities soAData = Entidades.com().data(SEXTA).montar();
+        Entities soOServico = Entidades.com().servico(BARBA).montar();
         when(regras.interpret("dá pra fazer a barba sexta?", LIVRE))
                 .thenReturn(new Interpretation(Intent.BOOK, 0.5, soAData, InterpreterKind.RULES));
         when(claude.interpret("dá pra fazer a barba sexta?", LIVRE))
@@ -87,7 +88,7 @@ class HybridInterpreterTest {
         Interpretation resultado = hibrido.interpret("dá pra fazer a barba sexta?", LIVRE);
 
         assertThat(resultado).isEqualTo(new Interpretation(Intent.PRICES, 0.8,
-                new Entities(BARBA.id(), null, false, SEXTA, null, null, null, null, null, false, false),
+                Entidades.com().servico(BARBA).data(SEXTA).montar(),
                 InterpreterKind.CLAUDE));
     }
 

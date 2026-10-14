@@ -1,8 +1,8 @@
 package com.gabrielpacheco.atendente.domain.booking;
 
-import com.gabrielpacheco.atendente.domain.nlu.Entities;
 import com.gabrielpacheco.atendente.domain.nlu.PartOfDay;
 import com.gabrielpacheco.atendente.domain.nlu.TimePreference;
+import com.gabrielpacheco.atendente.fixtures.Entidades;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +28,7 @@ class BookingDraftTest {
     void mergeDeveSobrescreverSoOInformado() {
         BookingDraft rascunho = new BookingDraft(1L, 2L, false, null, AS_15, null);
 
-        BookingDraft mesclado = rascunho.merge(entidades(null, null, false, SEXTA, null));
+        BookingDraft mesclado = rascunho.merge(Entidades.com().data(SEXTA).montar());
 
         assertThat(mesclado).isEqualTo(new BookingDraft(1L, 2L, false, SEXTA, AS_15, null));
     }
@@ -36,37 +36,37 @@ class BookingDraftTest {
     @Test
     @DisplayName("Trocar serviço, profissional, data ou hora desfaz o horário escolhido")
     void trocaDeveDesfazerOHorarioEscolhido() {
-        assertThat(ESCOLHIDO.merge(entidades(2L, null, false, null, null)).chosen()).isNull();
-        assertThat(ESCOLHIDO.merge(entidades(null, 2L, false, null, null)).chosen()).isNull();
-        assertThat(ESCOLHIDO.merge(entidades(null, null, true, null, null)).chosen()).isNull();
-        assertThat(ESCOLHIDO.merge(entidades(null, null, false, SEXTA, null)).chosen()).isNull();
-        assertThat(ESCOLHIDO.merge(entidades(null, null, false, null,
-                new TimePreference.Period(PartOfDay.MORNING))).chosen()).isNull();
+        assertThat(ESCOLHIDO.merge(Entidades.com().servico(2L).montar()).chosen()).isNull();
+        assertThat(ESCOLHIDO.merge(Entidades.com().profissional(2L).montar()).chosen()).isNull();
+        assertThat(ESCOLHIDO.merge(Entidades.com().tantoFaz().montar()).chosen()).isNull();
+        assertThat(ESCOLHIDO.merge(Entidades.com().data(SEXTA).montar()).chosen()).isNull();
+        assertThat(ESCOLHIDO.merge(Entidades.com().hora(new TimePreference.Period(PartOfDay.MORNING)).montar())
+                .chosen()).isNull();
     }
 
     @Test
     @DisplayName("Repetir o que já estava no rascunho mantém o horário escolhido")
     void mesmoValorDeveManterOHorarioEscolhido() {
-        assertThat(ESCOLHIDO.merge(entidades(1L, 1L, false, QUARTA, AS_15))).isEqualTo(ESCOLHIDO);
+        assertThat(ESCOLHIDO.merge(Entidades.com().servico(1L).profissional(1L).data(QUARTA).hora(AS_15).montar())).isEqualTo(ESCOLHIDO);
     }
 
     @Test
     @DisplayName("Trocar a data mantém a hora pedida")
     void trocarADataDeveManterAHora() {
-        assertThat(ESCOLHIDO.merge(entidades(null, null, false, SEXTA, null)).time()).isEqualTo(AS_15);
+        assertThat(ESCOLHIDO.merge(Entidades.com().data(SEXTA).montar()).time()).isEqualTo(AS_15);
     }
 
     @Test
     @DisplayName("Escolher um profissional desliga o \"tanto faz\", e o \"tanto faz\" apaga o profissional")
     void profissionalETantoFazDevemSeExcluir() {
-        BookingDraft tantoFaz = BookingDraft.EMPTY.merge(entidades(null, null, true, null, null));
+        BookingDraft tantoFaz = BookingDraft.EMPTY.merge(Entidades.com().tantoFaz().montar());
         assertThat(tantoFaz.anyProfessional()).isTrue();
 
-        BookingDraft comPedro = tantoFaz.merge(entidades(null, 2L, false, null, null));
+        BookingDraft comPedro = tantoFaz.merge(Entidades.com().profissional(2L).montar());
         assertThat(comPedro.anyProfessional()).isFalse();
         assertThat(comPedro.professionalId()).isEqualTo(2L);
 
-        BookingDraft deNovoTantoFaz = comPedro.merge(entidades(null, null, true, null, null));
+        BookingDraft deNovoTantoFaz = comPedro.merge(Entidades.com().tantoFaz().montar());
         assertThat(deNovoTantoFaz.anyProfessional()).isTrue();
         assertThat(deNovoTantoFaz.professionalId()).isNull();
     }
@@ -104,10 +104,5 @@ class BookingDraftTest {
         assertThatIllegalArgumentException().isThrownBy(() -> new BookingDraft(1L, 1L, true, null, null, null));
         assertThatIllegalArgumentException()
                 .isThrownBy(() -> new BookingDraft(1L, 1L, false, SEXTA, null, QUARTA_15_COM_JOAO));
-    }
-
-    private static Entities entidades(Long servico, Long profissional, boolean tantoFaz, LocalDate data,
-                                      TimePreference hora) {
-        return new Entities(servico, profissional, tantoFaz, data, null, hora, null, null, null, false, false);
     }
 }
