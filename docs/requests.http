@@ -1,0 +1,72 @@
+# Exemplos de todas as rotas do atendente. Feito para a extensão REST Client do VS Code; no IntelliJ, troque
+# {{$guid}} por {{$random.uuid}}. Suba o ambiente antes: docker compose up --build.
+
+@atendente = http://127.0.0.1:8080
+@agenda = http://127.0.0.1:8081
+@sessionId = {{sessao.response.body.sessionId}}
+
+### Saúde: a única rota do actuator exposta
+GET {{atendente}}/actuator/health
+
+### Nome, endereço e horário do negócio, e o modo de interpretação: RULES ou RULES_WITH_CLAUDE
+GET {{atendente}}/api/chat/business
+
+### Abre uma sessão do chat web. O telefone é fictício: só vai no agendamento, a identidade é o sessionId
+# @name sessao
+POST {{atendente}}/api/chat/sessions
+Content-Type: application/json
+
+{ "phone": "+55 48 90000-0000" }
+
+### Uma frase completa: o atendente acha o horário e pede só o nome. Com SHOW_DIAGNOSTICS=true, vem o "debug"
+POST {{atendente}}/api/chat/sessions/{{sessionId}}/messages
+Content-Type: application/json
+
+{ "clientMessageId": "{{$guid}}", "text": "qro agnedar um corte amanha as 3 da tarde c/ o joao" }
+
+### O nome; a resposta é o resumo, com os botões Sim e Não
+POST {{atendente}}/api/chat/sessions/{{sessionId}}/messages
+Content-Type: application/json
+
+{ "clientMessageId": "{{$guid}}", "text": "Gabriel" }
+
+### O "sim" que agenda de verdade no agendamento-api
+POST {{atendente}}/api/chat/sessions/{{sessionId}}/messages
+Content-Type: application/json
+
+{ "clientMessageId": "{{$guid}}", "text": "sim" }
+
+### Mande esta duas vezes: a segunda devolve a mesma resposta, sem processar de novo, com X-Idempotent-Replay: true
+POST {{atendente}}/api/chat/sessions/{{sessionId}}/messages
+Content-Type: application/json
+
+{ "clientMessageId": "6f1c2a7e-0d55-4f6e-9a39-3d2f4b8f1c10", "text": "meus agendamentos" }
+
+### Sessão que não existe: 404 em ProblemDetail
+POST {{atendente}}/api/chat/sessions/00000000-0000-4000-8000-000000000000/messages
+Content-Type: application/json
+
+{ "clientMessageId": "{{$guid}}", "text": "oi" }
+
+### Campo inválido: 400 com "errors" por campo
+POST {{atendente}}/api/chat/sessions
+Content-Type: application/json
+
+{ "phone": "abc" }
+
+### Webhook do WhatsApp (só existe com WHATSAPP_ENABLED=true): a verificação que o painel da Meta faz.
+# Devolve o challenge com o token certo e 403 com qualquer outro.
+GET {{atendente}}/webhook/whatsapp
+    ?hub.mode=subscribe
+    &hub.verify_token=SEU_WHATSAPP_VERIFY_TOKEN
+    &hub.challenge=desafio-123
+
+### Webhook com assinatura errada: 401. Para mandar uma mensagem assinada de verdade, use scripts/simular-webhook.sh
+POST {{atendente}}/webhook/whatsapp
+Content-Type: application/json
+X-Hub-Signature-256: sha256=0000000000000000000000000000000000000000000000000000000000000000
+
+{"object":"whatsapp_business_account","entry":[{"id":"WABA_ID","changes":[{"field":"messages","value":{"messaging_product":"whatsapp","metadata":{"display_phone_number":"15550000000","phone_number_id":"SEU_PHONE_NUMBER_ID"},"contacts":[{"profile":{"name":"Cliente Teste"},"wa_id":"5548900000000"}],"messages":[{"from":"5548900000000","id":"wamid.exemplo.1","timestamp":"1791910500","type":"text","text":{"body":"oi"}}]}}]}]}
+
+### agendamento-api (porta publicada só em 127.0.0.1): a agenda de um profissional num dia, a mesma da demo
+GET {{agenda}}/api/appointments?professionalId=1&date=2026-10-15

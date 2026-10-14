@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Agenda do agendamento-api, ao vivo</title>
+  <style>
+    :root {
+      --fundo: #0d1117;
+      --barra: #161b22;
+      --borda: #30363d;
+      --texto: #e6edf3;
+      --suave: #8b949e;
+      --dia: #e3b341;
+      --agendado: #238636;
+      --cancelado: #da3633;
+      --mudou: rgba(227, 179, 65, 0.28);
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: var(--fundo);
+      color: var(--texto);
+      font: 13px/1.55 "DejaVu Sans Mono", "Liberation Mono", monospace;
+    }
+
+    .barra {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 14px;
+      background: var(--barra);
+      border-bottom: 1px solid var(--borda);
+    }
+
+    .bolinha {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+
+    .titulo {
+      flex: 1;
+      text-align: center;
+      font-weight: bold;
+      margin-right: 40px;
+    }
+
+    main {
+      padding: 12px 14px;
+    }
+
+    .comando {
+      margin: 0;
+      color: var(--suave);
+    }
+
+    .dia {
+      margin: 16px 0 4px;
+      color: var(--dia);
+      font-weight: bold;
+    }
+
+    .vazio {
+      margin: 0;
+      padding-left: 6px;
+      color: var(--suave);
+    }
+
+    .agendamento {
+      display: grid;
+      grid-template-columns: 6ch 1fr auto;
+      column-gap: 1ch;
+      padding: 3px 6px;
+      border-radius: 4px;
+    }
+
+    .agendamento.mudou {
+      background: var(--mudou);
+    }
+
+    .quem {
+      grid-column: 2 / 4;
+      color: var(--suave);
+    }
+
+    .status {
+      padding: 0 6px;
+      border-radius: 3px;
+      color: #ffffff;
+      background: var(--suave);
+    }
+
+    .status.SCHEDULED,
+    .status.CONFIRMED {
+      background: var(--agendado);
+    }
+
+    .status.CANCELLED {
+      background: var(--cancelado);
+    }
+  </style>
+</head>
+<body>
+  <div class="barra">
+    <span class="bolinha" style="background:#ff5f56"></span>
+    <span class="bolinha" style="background:#ffbd2e"></span>
+    <span class="bolinha" style="background:#27c93f"></span>
+    <span class="titulo">agenda do agendamento-api, ao vivo</span>
+  </div>
+  <main>
+    <p class="comando">$ GET 127.0.0.1:8081/api/appointments</p>
+    <p class="comando" id="atualizado">aguardando a primeira consulta</p>
+    <section id="agenda"></section>
+  </main>
+
+  <script>
+    'use strict';
+
+    // Quem chama é o gravar-demo.mjs, a cada consulta ao agendamento-api; a página só desenha.
+    (function () {
+      const DESTAQUE_MS = 2000;
+      const vistos = new Map();
+      let primeiraVez = true;
+
+      function elemento(tag, classe, texto) {
+        const novo = document.createElement(tag);
+        novo.className = classe;
+        novo.textContent = texto;
+        return novo;
+      }
+
+      // Um agendamento novo, ou que mudou de status, fica destacado por duas consultas.
+      function mudouAgora(agendamento) {
+        const visto = vistos.get(agendamento.id);
+        if (!visto || visto.status !== agendamento.status) {
+          vistos.set(agendamento.id, { status: agendamento.status, desde: primeiraVez ? 0 : Date.now() });
+        }
+        return Date.now() - vistos.get(agendamento.id).desde < DESTAQUE_MS;
+      }
+
+      function linha(agendamento) {
+        const item = elemento('div', mudouAgora(agendamento) ? 'agendamento mudou' : 'agendamento', '');
+        item.append(
+          elemento('span', 'hora', agendamento.hora),
+          elemento('span', 'servico', agendamento.servico),
+          elemento('span', 'status ' + agendamento.status, agendamento.status),
+          elemento('span', 'quem', agendamento.profissional + ' · ' + agendamento.cliente));
+        return item;
+      }
+
+      window.mostrarAgenda = function (dias, consultadaAs) {
+        const blocos = dias.flatMap((dia) => [
+          elemento('h2', 'dia', dia.titulo),
+          ...(dia.agendamentos.length
+            ? dia.agendamentos.map(linha)
+            : [elemento('p', 'vazio', '(nenhum agendamento)')])
+        ]);
+        document.getElementById('agenda').replaceChildren(...blocos);
+        document.getElementById('atualizado').textContent = 'consultada a cada 1 s · ' + consultadaAs;
+        primeiraVez = false;
+      };
+    })();
+  </script>
+</body>
+</html>

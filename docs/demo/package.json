@@ -1,0 +1,13 @@
+{
+  "name": "atendente-whatsapp-demo",
+  "private": true,
+  "description": "Grava o GIF de demonstração do atendente-whatsapp",
+  "type": "module",
+  "scripts": {
+    "gravar": "node gravar-demo.mjs",
+    "gravar-conflito": "node gravar-demo.mjs --cena-conflito"
+  },
+  "dependencies": {
+    "playwright": "1.56.1"
+  }
+}
