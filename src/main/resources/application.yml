@@ -48,6 +48,8 @@ app:
     requests-per-minute-per-ip: 60
     sessions-per-hour-per-ip: 10
     max-body: 16KB
+  painel:
+    password: ${PAINEL_SENHA:}
   whatsapp:
     enabled: ${WHATSAPP_ENABLED:false}
     verify-token: ${WHATSAPP_VERIFY_TOKEN:}

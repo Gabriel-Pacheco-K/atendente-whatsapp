@@ -7,6 +7,7 @@ import com.gabrielpacheco.atendente.application.port.out.AppointmentInfo;
 import com.gabrielpacheco.atendente.application.port.out.Deadline;
 import com.gabrielpacheco.atendente.application.port.out.NewAppointment;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingPort;
+import com.gabrielpacheco.atendente.application.port.out.StatusChange;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingUnavailableException;
 import com.gabrielpacheco.atendente.domain.catalog.Catalog;
 import com.gabrielpacheco.atendente.domain.catalog.Professional;
@@ -219,6 +220,11 @@ class CatalogProviderTest {
 
         @Override
         public AppointmentInfo cancel(long appointmentId, String reason) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public AppointmentInfo updateStatus(long appointmentId, StatusChange change) {
             throw new UnsupportedOperationException();
         }
 

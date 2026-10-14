@@ -26,6 +26,9 @@ public interface SchedulingPort {
 
     AppointmentInfo cancel(long appointmentId, String reason);
 
+    /** Marca que o cliente veio ou faltou. Como o cancelamento, nunca é repetido. */
+    AppointmentInfo updateStatus(long appointmentId, StatusChange change);
+
     /** Todos os agendamentos do profissional no dia, em qualquer status. Usado na reconciliação. */
     List<AppointmentInfo> dayAgenda(long professionalId, LocalDate date);
 

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Agenda · Painel</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="painel.css">
+  <script src="painel.js" defer></script>
+</head>
+<body>
+  <main id="login" class="login" hidden>
+    <form id="login-form" class="login-card">
+      <h1>Painel da agenda</h1>
+      <label for="senha">Senha</label>
+      <input id="senha" type="password" autocomplete="current-password" required>
+      <button type="submit">Entrar</button>
+      <p id="login-erro" class="erro" role="alert"></p>
+    </form>
+  </main>
+
+  <div id="painel" hidden>
+    <header class="topo">
+      <button id="dia-anterior" class="seta" aria-label="Dia anterior">‹</button>
+      <div class="dia">
+        <h1 id="titulo-dia"></h1>
+        <button id="hoje" class="link">Hoje</button>
+      </div>
+      <button id="dia-seguinte" class="seta" aria-label="Dia seguinte">›</button>
+    </header>
+
+    <section class="resumo" aria-live="polite">
+      <div><strong id="total-agendamentos">0</strong><span>agendamentos</span></div>
+      <div><strong id="total-concluidos">0</strong><span>concluídos</span></div>
+      <div><strong id="total-previsto">R$ 0,00</strong><span>previsto</span></div>
+      <div><strong id="total-feito">R$ 0,00</strong><span>já feito</span></div>
+    </section>
+
+    <p id="aviso" class="aviso" role="alert" hidden></p>
+    <div id="profissionais"></div>
+
+    <footer class="rodape">
+      <button id="atualizar" class="link">Atualizar</button>
+      <button id="sair" class="link">Sair</button>
+    </footer>
+  </div>
+</body>
+</html>

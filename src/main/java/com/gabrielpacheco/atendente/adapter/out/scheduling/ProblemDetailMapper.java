@@ -80,7 +80,8 @@ final class ProblemDetailMapper {
         if (status == 422 && operation.writes()) {
             return new BookingRejectedException(problem.detail());
         }
-        if (status == 404 && (operation == Operation.FIND || operation == Operation.CANCEL)) {
+        if (status == 404 && (operation == Operation.FIND || operation == Operation.CANCEL
+                || operation == Operation.UPDATE_STATUS)) {
             return new AppointmentNotFoundException(problem.detail());
         }
         if (status >= 400 && status < 500) {

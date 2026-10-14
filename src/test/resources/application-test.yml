@@ -4,6 +4,7 @@ app:
   web.show-diagnostics: true
   # A pausa antes da segunda conferência da agenda é de verdade nos testes com Spring; curta, o teste não demora.
   scheduling-api.reconciliation-retry-delay: 50ms
+  painel.password: "senha-de-teste"
   # O webhook fica ligado em todos os testes com Spring, com segredos que só valem aqui; o envio vai para o WireMock
   # da Graph API. O segredo é o dos vetores de assinatura conferidos com o openssl.
   whatsapp:

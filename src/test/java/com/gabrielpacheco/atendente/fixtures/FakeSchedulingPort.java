@@ -1,6 +1,7 @@
 package com.gabrielpacheco.atendente.fixtures;
 
 import com.gabrielpacheco.atendente.application.port.out.AppointmentInfo;
+import com.gabrielpacheco.atendente.application.port.out.StatusChange;
 import com.gabrielpacheco.atendente.application.port.out.AppointmentNotFoundException;
 import com.gabrielpacheco.atendente.application.port.out.BookingRejectedException;
 import com.gabrielpacheco.atendente.application.port.out.Deadline;
@@ -155,6 +156,18 @@ public final class FakeSchedulingPort implements SchedulingPort {
             throw falha;
         }
         return cancelado;
+    }
+
+    @Override
+    public synchronized AppointmentInfo updateStatus(long appointmentId, StatusChange change) {
+        AppointmentInfo atual = existente(appointmentId);
+        if (!atual.status().isActive()) {
+            throw new BookingRejectedException("Não é possível mudar o agendamento de " + atual.status()
+                    + " para " + change.result() + ".");
+        }
+        AppointmentInfo atualizado = comStatus(atual, change.result());
+        agenda.put(appointmentId, atualizado);
+        return atualizado;
     }
 
     @Override

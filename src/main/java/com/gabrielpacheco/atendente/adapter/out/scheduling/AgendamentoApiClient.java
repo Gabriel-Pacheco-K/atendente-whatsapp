@@ -11,6 +11,7 @@ import com.gabrielpacheco.atendente.application.port.out.Deadline;
 import com.gabrielpacheco.atendente.application.port.out.NewAppointment;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingException;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingPort;
+import com.gabrielpacheco.atendente.application.port.out.StatusChange;
 import com.gabrielpacheco.atendente.domain.catalog.Professional;
 import com.gabrielpacheco.atendente.domain.catalog.ServiceType;
 import org.slf4j.Logger;
@@ -136,6 +137,17 @@ public class AgendamentoApiClient implements SchedulingPort {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(new CancelJson(reason));
         return attempt(Operation.CANCEL, request, APPOINTMENT).bodyOrThrow().toDomain();
+    }
+
+    @Override
+    public AppointmentInfo updateStatus(long appointmentId, StatusChange change) {
+        String action = switch (change) {
+            case COMPLETE -> "complete";
+            case NO_SHOW -> "no-show";
+        };
+        RestClient.RequestHeadersSpec<?> request =
+                http.patch().uri("/api/appointments/{id}/{action}", appointmentId, action);
+        return attempt(Operation.UPDATE_STATUS, request, APPOINTMENT).bodyOrThrow().toDomain();
     }
 
     @Override

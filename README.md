@@ -21,6 +21,8 @@ Ele grava os horários no [agendamento-api](https://github.com/Gabriel-Pacheco-K
 - Se o horário está ocupado, sugere os mais próximos.
 - Lista e cancela os agendamentos do cliente.
 - Responde preço, endereço e horário de funcionamento, até no meio de um agendamento.
+- Tem um painel para o dono (`/painel.html`, com senha): a agenda do dia de cada barbeiro, quanto já entrou e
+  botões de concluído, não veio e cancelar.
 - Funciona no chat web (uma página parecida com o WhatsApp) e no WhatsApp de verdade, pela Cloud API da Meta.
 
 Não precisa de IA paga: tem um motor de regras próprio para o português. Se quiser, dá para ligar o Claude para as
@@ -55,6 +57,8 @@ docker compose up --build
 Abra http://localhost:8080 e converse. O compose sobe o PostgreSQL, o agendamento-api, os dados da barbearia de
 exemplo e o atendente.
 
+Para abrir o painel do dono, coloque `PAINEL_SENHA=uma-senha` no `.env` e entre em http://localhost:8080/painel.html.
+
 Para ligar no WhatsApp com o número de teste grátis da Meta, o passo a passo está em
 [docs/detalhes-tecnicos.md](docs/detalhes-tecnicos.md#whatsapp-com-o-número-de-teste-da-meta).
 
@@ -64,7 +68,7 @@ Para ligar no WhatsApp com o número de teste grátis da Meta, o passo a passo e
 mvn verify
 ```
 
-São 978 testes: unitários, conversas inteiras simuladas, integração com PostgreSQL real (Testcontainers) e a API de
+São 985 testes: unitários, conversas inteiras simuladas, integração com PostgreSQL real (Testcontainers) e a API de
 agendamento simulada com WireMock. No CI ainda roda um teste ponta a ponta com o agendamento-api de verdade.
 
 ## Tecnologias
@@ -81,7 +85,7 @@ Java 21, Spring Boot 3.3, PostgreSQL 16, Flyway, Testcontainers, WireMock, ArchU
 
 - Lembrete automático um dia antes do horário.
 - Remarcar direto, sem precisar cancelar e marcar de novo.
-- Um painel simples para o dono ver a agenda do dia.
+- Faturamento do mês e do ano no painel, com gráfico.
 
 Quer ver todas as decisões técnicas em detalhe? Estão em [docs/detalhes-tecnicos.md](docs/detalhes-tecnicos.md).
 
