@@ -219,6 +219,45 @@ class ChatApiIntegrationTest extends IntegrationTestBase {
         }
 
         @Test
+        @DisplayName("Sessões inventadas também contam no limite por IP: a 61ª no minuto dá 429 sem ir ao banco")
+        void sessoesInexistentesDevemContarNoLimitePorIp() {
+            for (int i = 0; i < 60; i++) {
+                assertThat(mensagemParaSessaoInventada().status()).isEqualTo(404);
+            }
+
+            Resposta resposta = mensagemParaSessaoInventada();
+
+            assertThat(resposta.status()).isEqualTo(429);
+            assertThat(resposta.cabecalho("Retry-After")).isNotBlank();
+        }
+
+        @Test
+        @DisplayName("No IPv6, o limite de sessões vale para a rede /64 inteira, não para cada endereço")
+        void enderecosDaMesmaRedeIpv6DevemDividirOLimite() {
+            for (int i = 1; i <= 10; i++) {
+                assertThat(novaSessaoDe("2001:db8:1:2::" + Integer.toHexString(i)).status()).isEqualTo(201);
+            }
+
+            assertThat(novaSessaoDe("2001:db8:1:2:ffff::1").status()).isEqualTo(429);
+            assertThat(novaSessaoDe("2001:db8:1:3::1").status()).isEqualTo(201);
+        }
+
+        private Resposta mensagemParaSessaoInventada() {
+            return chat.executar(post("/api/chat/sessions/" + UUID.randomUUID() + "/messages")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"clientMessageId\":\"" + UUID.randomUUID() + "\",\"text\":\"oi\"}"));
+        }
+
+        private Resposta novaSessaoDe(String ip) {
+            return chat.executar(post("/api/chat/sessions").contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"phone\":\"" + TELEFONE + "\"}")
+                    .with(pedido -> {
+                        pedido.setRemoteAddr(ip);
+                        return pedido;
+                    }));
+        }
+
+        @Test
         @DisplayName("A 11ª sessão do mesmo IP na hora dá 429")
         void sessoesDemaisDevemDar429() {
             for (int i = 0; i < 10; i++) {

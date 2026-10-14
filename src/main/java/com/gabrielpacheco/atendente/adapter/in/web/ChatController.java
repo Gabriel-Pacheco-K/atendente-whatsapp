@@ -70,7 +70,7 @@ class ChatController {
     @PostMapping("/sessions")
     ResponseEntity<CreateSessionResponse> createSession(@Valid @RequestBody CreateSessionRequest body,
                                                         HttpServletRequest request) {
-        check(limits.sessionsPerIp(), ClientIpResolver.resolve(request), "Muitas sessões");
+        check(limits.sessionsPerIp(), ClientIpResolver.rateLimitKey(request), "Muitas sessões");
         ChatSession session = sessions.start(body.phone());
         return ResponseEntity.status(HttpStatus.CREATED).body(new CreateSessionResponse(session.sessionId(),
                 business.name(), Texts.menu(business.name()), SUGGESTIONS));
@@ -79,9 +79,10 @@ class ChatController {
     @PostMapping("/sessions/{sessionId}/messages")
     ResponseEntity<SendMessageResponse> send(@PathVariable UUID sessionId, @Valid @RequestBody SendMessageRequest body,
                                              HttpServletRequest request) {
+        // O limite por IP vem antes da consulta ao banco: senão, ids inventados passariam sem limite.
+        check(limits.requestsPerIp(), ClientIpResolver.rateLimitKey(request), "Muitas mensagens");
         CustomerRef customer = sessions.find(sessionId).orElseThrow(SessionNotFoundException::new);
         check(limits.messagesPerSession(), sessionId.toString(), "Muitas mensagens");
-        check(limits.requestsPerIp(), ClientIpResolver.resolve(request), "Muitas mensagens");
         ConversationReply reply = conversation.handle(new IncomingMessage(customer, MessageKind.TEXT, body.text(),
                 body.clientMessageId().toString(), clock.instant()));
         SendMessageResponse response = new SendMessageResponse(reply.replies(),

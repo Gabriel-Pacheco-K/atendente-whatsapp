@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 
@@ -54,6 +55,16 @@ class SecurityHeadersIntegrationTest extends IntegrationTestBase {
         assertThat(resposta.getStatus()).isEqualTo(201);
         assertThat(resposta.getHeader("Content-Security-Policy")).isEqualTo(CSP);
         assertThat(resposta.getHeader("X-Frame-Options")).isEqualTo("DENY");
+        assertThat(resposta.getHeader("Cache-Control")).isEqualTo("no-store");
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"/%61pi/chat/sessions", "/api;x=1/chat/sessions"})
+    @DisplayName("Um caminho equivalente ao da API também sai sem cache, porque a resposta traz o id da sessão")
+    void caminhoEquivalenteDeveSairSemCache(String caminho) throws Exception {
+        MockHttpServletResponse resposta = executar(post(URI.create(caminho)).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"phone\":\"+55 48 99999-0001\"}"));
+
         assertThat(resposta.getHeader("Cache-Control")).isEqualTo("no-store");
     }
 

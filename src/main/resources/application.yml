@@ -19,6 +19,8 @@ spring:
         options: "-c lock_timeout=3s -c statement_timeout=15s -c idle_in_transaction_session_timeout=60s"
   jpa: { hibernate.ddl-auto: validate, open-in-view: false }
   mvc.problemdetails.enabled: true
+  # Nenhuma rota recebe arquivo; ligado, o corpo multipart seria lido antes da verificação da assinatura do webhook.
+  servlet.multipart.enabled: false
   lifecycle.timeout-per-shutdown-phase: 20s
 
 management:

@@ -99,14 +99,19 @@ public record AppProperties(@NotNull ZoneId timezone,
     public record Ai(@Valid @NotNull Claude claude) {
     }
 
-    /** @param effort um dos valores que a API aceita; um erro de digitação faria toda chamada voltar 400 */
+    /**
+     * @param effort  um dos valores que a API aceita; um erro de digitação faria toda chamada voltar 400
+     * @param baseUrl vazio em produção. O cliente do SDK segue redirecionamentos levando a chave junto, então só vale
+     *                https, ou http num servidor local de teste
+     */
     public record Claude(boolean enabled,
                          String apiKey,
                          @NotBlank String model,
                          @NotNull @Pattern(regexp = "low|medium|high|xhigh|max") String effort,
                          @Positive int maxTokens,
                          @NotNull Duration timeout,
-                         String baseUrl,
+                         @Pattern(regexp = "|https://.+|http://(localhost|127\\.0\\.0\\.1|\\[::1])(:\\d+)?(/.*)?",
+                                 message = "precisa ser https (http só em localhost)") String baseUrl,
                          @DecimalMin("0") @DecimalMax("1") double rulesConfidenceThreshold) {
 
         @Override

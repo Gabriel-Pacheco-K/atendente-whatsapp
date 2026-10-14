@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.util.UrlPathHelper;
 
 import java.io.IOException;
 
@@ -27,7 +28,8 @@ public class SecurityHeadersFilter extends OncePerRequestFilter {
         response.setHeader("X-Frame-Options", "DENY");
         response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
         response.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-        if (request.getRequestURI().startsWith("/api/")) {
+        // O caminho como o Spring MVC o casa: decodificado e sem ";parametros". Pelo URI cru, "/%61pi/..." escaparia.
+        if (UrlPathHelper.defaultInstance.getPathWithinApplication(request).startsWith("/api/")) {
             response.setHeader("Cache-Control", "no-store");
         }
         chain.doFilter(request, response);

@@ -10,12 +10,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.web.servlet.DispatcherServlet;
 
 import java.time.Duration;
 import java.util.List;
@@ -230,6 +233,17 @@ class WhatsAppWebhookIntegrationTest extends IntegrationTestBase {
             assertThat(semAssinatura.status()).isEqualTo(401);
             assertThat(textosEnviados(GRAPH)).isEmpty();
             assertThat(clientes()).isZero();
+        }
+
+        @Test
+        @DisplayName("Corpo multipart sem assinatura dá 401: ninguém lê as partes antes da verificação")
+        void multipartSemAssinaturaDeveDar401(@Autowired ApplicationContext contexto) {
+            Resposta resposta = whatsapp.executar(MockMvcRequestBuilders.post(WhatsAppHttp.WEBHOOK)
+                    .contentType("multipart/form-data; boundary=XYZ")
+                    .content("--XYZ\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\nabc"));
+
+            assertThat(resposta.status()).isEqualTo(401);
+            assertThat(contexto.containsBean(DispatcherServlet.MULTIPART_RESOLVER_BEAN_NAME)).isFalse();
         }
 
         @Test

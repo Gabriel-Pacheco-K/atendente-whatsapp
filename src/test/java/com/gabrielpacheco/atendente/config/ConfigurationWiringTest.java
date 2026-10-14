@@ -193,6 +193,15 @@ class ConfigurationWiringTest {
         }
 
         @Test
+        @DisplayName("Endereço do Claude em http fora de localhost impede a subida: um redirecionamento levaria a chave")
+        void enderecoSemHttpsNaoDeveSubir() {
+            contexto.withPropertyValues("app.ai.claude.base-url=http://proxy.exemplo.com").run(ctx ->
+                    assertThat(ctx.getStartupFailure()).rootCause().hasMessageContaining("ai.claude.base-url"));
+            contexto.withPropertyValues("app.ai.claude.base-url=https://proxy.exemplo.com")
+                    .run(ctx -> assertThat(ctx).hasNotFailed());
+        }
+
+        @Test
         @DisplayName("Um effort que a API não aceita impede a subida, em vez de fazer toda chamada falhar")
         void effortInvalidoNaoDeveSubir() {
             contexto.withPropertyValues("app.ai.claude.effort=baixo").run(ctx ->
