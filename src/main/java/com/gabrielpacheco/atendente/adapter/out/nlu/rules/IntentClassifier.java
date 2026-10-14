@@ -120,7 +120,7 @@ final class IntentClassifier {
             confidence = ENTITIES_ONLY_CONFIDENCE;
         } else {
             int best = board.score(intent);
-            int runnerUp = board.bestScoreExcept(intent);
+            int runnerUp = board.bestRivalCues(intent);
             double lead = best - runnerUp >= CLEAR_LEAD ? 1.0 : NARROW_LEAD_FACTOR;
             confidence = Math.min(1.0, best / SCORE_FOR_FULL_CONFIDENCE) * lead;
         }
@@ -142,6 +142,7 @@ final class IntentClassifier {
     private static final class Scoreboard {
 
         private final Map<Intent, Integer> scores = new EnumMap<>(Intent.class);
+        private final Map<Intent, Integer> bonuses = new EnumMap<>(Intent.class);
         private final Set<Intent> fromCorrection = EnumSet.noneOf(Intent.class);
         private boolean anyCue;
 
@@ -155,16 +156,22 @@ final class IntentClassifier {
 
         void addBonus(Intent intent, int points) {
             scores.merge(intent, points, Integer::sum);
+            bonuses.merge(intent, points, Integer::sum);
         }
 
         int score(Intent intent) {
             return scores.getOrDefault(intent, 0);
         }
 
-        int bestScoreExcept(Intent intent) {
-            return scores.entrySet().stream()
-                    .filter(entry -> entry.getKey() != intent)
-                    .mapToInt(Map.Entry::getValue)
+        /**
+         * A maior pontuação entre as outras intenções, só com as pistas delas. O bônus das entidades ajuda BOOK a
+         * vencer, mas não disputa a certeza de outra intenção: em "quanto custa a barba?", a barba é o assunto do
+         * preço, e a dúvida chamaria o Claude à toa.
+         */
+        int bestRivalCues(Intent intent) {
+            return scores.keySet().stream()
+                    .filter(other -> other != intent)
+                    .mapToInt(other -> score(other) - bonuses.getOrDefault(other, 0))
                     .max()
                     .orElse(0);
         }

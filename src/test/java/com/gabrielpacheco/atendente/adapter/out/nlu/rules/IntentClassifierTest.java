@@ -26,6 +26,8 @@ class IntentClassifierTest {
 
     private static final Entities COM_DATA =
             new Entities(null, null, false, LocalDate.of(2026, 10, 16), null, null, null, null, null, false, false);
+    private static final Entities COM_SERVICO =
+            new Entities(2L, null, false, null, null, null, null, null, null, false, false);
 
     private final IntentClassifier classificador = new IntentClassifier();
 
@@ -96,6 +98,20 @@ class IntentClassifierTest {
         assertThat(classificar("quero agendar", Expectation.NONE).confidence()).isCloseTo(0.75, within(1e-9));
         assertThat(classificar("tem horario para agendar", Expectation.NONE).confidence()).isEqualTo(1.0);
         assertThat(classificar("oi quero agendar", Expectation.NONE).confidence()).isCloseTo(0.525, within(1e-9));
+    }
+
+    @Test
+    @DisplayName("O bônus das entidades faz BOOK vencer, mas não tira a certeza de outra intenção com pista própria")
+    void bonusDasEntidadesNaoDeveTirarACertezaDeOutraIntencao() {
+        Classification preco = classificador.classify(semCorrecao("quanto custa a barba"), Expectation.NONE,
+                COM_SERVICO, 0);
+        Classification agendamento = classificador.classify(semCorrecao("oi barba"), Expectation.NONE,
+                COM_SERVICO, 0);
+
+        assertThat(preco.intent()).isEqualTo(Intent.PRICES);
+        assertThat(preco.confidence()).isCloseTo(0.75, within(1e-9));
+        assertThat(agendamento.intent()).isEqualTo(BOOK);
+        assertThat(agendamento.confidence()).isCloseTo(0.35, within(1e-9));
     }
 
     @Test
