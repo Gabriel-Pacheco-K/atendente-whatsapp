@@ -41,6 +41,7 @@ final class IntentClassifier {
     /** Em empate, vence quem aparece antes: pedir uma pessoa nunca perde para uma saudação. */
     private static final List<Intent> TIE_BREAK = List.of(HUMAN, CANCEL_BOOKING, RESTART, MY_BOOKINGS, BOOK, PRICES,
             OPENING_HOURS, ADDRESS, FAQ, AFFIRM, DENY, THANKS, GREETING);
+    private static final Set<Intent> QUESTIONS = EnumSet.of(PRICES, OPENING_HOURS, ADDRESS, FAQ);
     private static final int MIN_WINNING_SCORE = 2;
     private static final int BOOKING_DATA_BONUS = 2;
     private static final int FAQ_KEYWORD_WEIGHT = 3;
@@ -186,13 +187,26 @@ final class IntentClassifier {
         int bestRivalCues(Intent intent) {
             return scores.keySet().stream()
                     .filter(other -> other != intent)
-                    .mapToInt(other -> score(other) - bonuses.getOrDefault(other, 0))
+                    .mapToInt(this::cues)
                     .max()
                     .orElse(0);
         }
 
+        /**
+         * No empate, o bônus das entidades faz BOOK vencer, menos contra uma pergunta com mais pistas: em "vocês
+         * abrem domingo?", o domingo é o assunto da pergunta, não o dia de um agendamento.
+         */
         Intent leader() {
-            return leaderAmong(intent -> true).orElse(null);
+            Intent leader = leaderAmong(intent -> true).orElse(null);
+            if (leader != BOOK) {
+                return leader;
+            }
+            return leaderAmong(intent -> QUESTIONS.contains(intent) && score(intent) == score(BOOK)
+                    && cues(intent) > cues(BOOK)).orElse(BOOK);
+        }
+
+        private int cues(Intent intent) {
+            return score(intent) - bonuses.getOrDefault(intent, 0);
         }
 
         Optional<Intent> leaderAmong(Predicate<Intent> eligible) {

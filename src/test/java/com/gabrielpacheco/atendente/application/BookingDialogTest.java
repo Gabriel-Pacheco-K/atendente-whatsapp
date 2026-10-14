@@ -19,6 +19,8 @@ import com.gabrielpacheco.atendente.fixtures.Dialogo;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -100,6 +102,19 @@ class BookingDialogTest {
         dialogo.cliente("Ana Souza")
                 .atendenteDiz("*Barba* com *Pedro Henrique*\nSexta-feira, 16/10, às 10:00, R$ 35,00")
                 .estadoE(ConfirmingBooking.class);
+    }
+
+    @Test
+    @DisplayName("\"meu nome é ...\" no resumo corrige o nome")
+    void meuNomeENoResumoDeveCorrigirONome() {
+        Dialogo dialogo = Dialogo.naWeb().cliente("corte amanha 10h com o joao").cliente("Gabriel");
+
+        dialogo.cliente("meu nome é Ana Souza")
+                .atendenteDiz("No nome de Ana Souza.")
+                .estadoE(ConfirmingBooking.class);
+
+        assertThat(dialogo.clienteSalvo().name()).isEqualTo("Ana Souza");
+        assertThat(dialogo.agenda().postCount()).isZero();
     }
 
     @Test
@@ -193,6 +208,16 @@ class BookingDialogTest {
             dialogo.cliente("meu nome completo é ana souza")
                     .atendenteDiz("*Corte masculino* com *João Batista*")
                     .atendenteDiz("No nome de Ana Souza.");
+        }
+
+        @ParameterizedTest(name = "\"{0}\"")
+        @ValueSource(strings = {"aceita pix?", "eu mesmo", "sou eu mesmo", "tanto faz", "kkkk", "deixa eu ver",
+                "como assim"})
+        @DisplayName("Uma pergunta ou conversa não vira o nome do cliente")
+        void conversaNaoDeveVirarONome(String fala) {
+            dialogo.cliente(fala).atendenteNaoDiz("No nome de").estadoE(AskingName.class);
+
+            assertThat(dialogo.clienteSalvo().name()).isNull();
         }
 
         @Test

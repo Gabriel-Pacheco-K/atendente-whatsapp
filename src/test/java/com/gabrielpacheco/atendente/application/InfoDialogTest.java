@@ -40,6 +40,21 @@ class InfoDialogTest {
                 .estadoE(Idle.class);
     }
 
+    @ParameterizedTest(name = "\"{0}\"")
+    @CsvSource({"vcs abrem domingo?", "abre segunda?", "voces abrem sabado?"})
+    @DisplayName("Perguntar se abre num dia responde o horário, em vez de começar um agendamento")
+    void perguntaSeAbreNumDiaDeveResponderOHorario(String pergunta) {
+        dialogo.cliente(pergunta).atendenteDiz(HORARIO).atendenteNaoDiz("Qual serviço").estadoE(Idle.class);
+    }
+
+    @Test
+    @DisplayName("Perguntar quanto tempo um serviço leva responde a duração")
+    void quantoTempoDeveResponderADuracao() {
+        dialogo.cliente("quanto tempo demora o corte?")
+                .atendenteDiz("*Corte masculino* custa R$ 45,00 e leva 30 min.")
+                .estadoE(Idle.class);
+    }
+
     @Test
     @DisplayName("Endereço, inclusive quando a pergunta cita a barbearia")
     void deveResponderOEndereco() {

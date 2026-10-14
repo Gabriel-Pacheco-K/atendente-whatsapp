@@ -1,5 +1,6 @@
 package com.gabrielpacheco.atendente.adapter.out.nlu.rules;
 
+import com.gabrielpacheco.atendente.domain.catalog.CatalogMatcher;
 import com.gabrielpacheco.atendente.domain.conversation.PersonName;
 import com.gabrielpacheco.atendente.domain.nlu.Expectation;
 import com.gabrielpacheco.atendente.domain.text.TextNormalizer;
@@ -130,6 +131,8 @@ class OptionAndNameExtractorTest {
     @DisplayName("Nomes")
     class Nomes {
 
+        private static final CatalogMatcher CATALOGO = new CatalogMatcher(Barbearia.catalogo());
+
         private final NameExtractor extrator = new NameExtractor();
 
         @ParameterizedTest(name = "\"{0}\" → \"{1}\"")
@@ -142,11 +145,12 @@ class OptionAndNameExtractorTest {
                 "pode colocar no nome de Márcia, Márcia",
                 "aqui é a Clara, Clara",
                 "joão, João",
-                "Ana Souza por favor, Ana Souza"
+                "Ana Souza por favor, Ana Souza",
+                "Bárbara, Bárbara"
         })
         @DisplayName("Tira prefixos, recupera acentos e coloca maiúsculas")
         void deveExtrairONome(String texto, String esperado) {
-            assertThat(extrator.extract(texto, List.of())).contains(esperado);
+            assertThat(extrator.extract(texto, List.of(), CATALOGO)).contains(esperado);
         }
 
         @ParameterizedTest(name = "\"{0}\"")
@@ -154,15 +158,32 @@ class OptionAndNameExtractorTest {
                 "de souza", "me chamo"})
         @DisplayName("Recusa comandos, números, frases longas e textos sem nome")
         void naoDeveAceitarOQueNaoENome(String texto) {
-            assertThat(extrator.extract(texto, List.of())).isEmpty();
+            assertThat(extrator.extract(texto, List.of(), CATALOGO)).isEmpty();
+        }
+
+        @ParameterizedTest(name = "\"{0}\"")
+        @ValueSource(strings = {"aceita pix?", "Maria?", "sou eu mesmo", "eu mesmo", "tanto faz", "pra mim", "kkkk",
+                "hmm", "espera", "deixa eu ver", "como assim", "teste", "meu filho Pedro", "barba", "corte e barba"})
+        @DisplayName("Recusa perguntas, conversa, risadas e serviços")
+        void naoDeveAceitarConversaComoNome(String texto) {
+            assertThat(extrator.extract(texto, List.of(), CATALOGO)).isEmpty();
+        }
+
+        @Test
+        @DisplayName("Fora da pergunta do nome, só aceita um nome apresentado")
+        void foraDaPerguntaDoNomeDeveExigirApresentacao() {
+            assertThat(extrator.extractIntroduced("meu nome é Ana Souza", CATALOGO)).contains("Ana Souza");
+            assertThat(extrator.extractIntroduced("sim, no nome da Márcia", CATALOGO)).contains("Márcia");
+            assertThat(extrator.extractIntroduced("Ana Souza", CATALOGO)).isEmpty();
+            assertThat(extrator.extractIntroduced("sim", CATALOGO)).isEmpty();
         }
 
         @Test
         @DisplayName("Recusa o texto de uma opção oferecida, como \"Outro nome\"")
         void naoDeveAceitarORotuloDeUmaOpcao() {
-            assertThat(extrator.extract("Outro nome", NOME_SUGERIDO)).isEmpty();
-            assertThat(extrator.extract("outro nom", NOME_SUGERIDO)).isEmpty();
-            assertThat(extrator.extract("Gabriel", NOME_SUGERIDO)).contains("Gabriel");
+            assertThat(extrator.extract("Outro nome", NOME_SUGERIDO, CATALOGO)).isEmpty();
+            assertThat(extrator.extract("outro nom", NOME_SUGERIDO, CATALOGO)).isEmpty();
+            assertThat(extrator.extract("Gabriel", NOME_SUGERIDO, CATALOGO)).contains("Gabriel");
         }
 
         @Test

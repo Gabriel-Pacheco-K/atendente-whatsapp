@@ -108,3 +108,8 @@ corte 15h 20/10 com o joao;BOOK;Corte masculino;João Batista;2026-10-20;15:00
 corte amanha as 14:30h com o joao;BOOK;Corte masculino;João Batista;2026-10-14;14:30
 corte sexta dia 16 de manha com o pedro;BOOK;Corte masculino;Pedro Henrique;2026-10-16;
 corte amanha 10 e meia com o pedro;BOOK;Corte masculino;Pedro Henrique;2026-10-14;10:30
+voces abrem domingo?;OPENING_HOURS;;;2026-10-18;
+vcs abrem sabado?;OPENING_HOURS;;;2026-10-17;
+abre segunda?;OPENING_HOURS;;;2026-10-19;
+quanto tempo demora o corte?;PRICES;Corte masculino;;;
+qual a duracao da barba?;PRICES;Barba;;;

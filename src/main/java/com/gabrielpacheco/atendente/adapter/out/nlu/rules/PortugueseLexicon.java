@@ -35,11 +35,12 @@ final class PortugueseLexicon {
                             "nao posso ir"),
                     weighted(MY_BOOKINGS, 3, "meus agendamentos", "meu horario", "qual meu horario", "tenho horario"),
                     weighted(MY_BOOKINGS, 2, "ja agendei"),
-                    weighted(PRICES, 3, "preco", "valor", "quanto e", "quanto ta", "quanto fica", "quanto custa"),
-                    weighted(PRICES, 2, "quanto", "custa", "tabela", "servicos"),
+                    weighted(PRICES, 3, "preco", "valor", "quanto e", "quanto ta", "quanto fica", "quanto custa",
+                            "quanto tempo", "duracao"),
+                    weighted(PRICES, 2, "quanto", "custa", "tabela", "servicos", "demora"),
                     weighted(OPENING_HOURS, 4, "que horas abre", "que horas fecha", "horario de funcionamento"),
                     weighted(OPENING_HOURS, 3, "funcionamento"),
-                    weighted(OPENING_HOURS, 2, "abre", "fecha", "aberto", "expediente"),
+                    weighted(OPENING_HOURS, 2, "abre", "abrem", "abrir", "fecha", "fecham", "aberto", "expediente"),
                     weighted(ADDRESS, 4, "onde fica", "onde ficam", "como chego"),
                     weighted(ADDRESS, 3, "endereco", "localizacao"),
                     weighted(ADDRESS, 2, "onde", "mapa"),
@@ -70,6 +71,7 @@ final class PortugueseLexicon {
     /** Saudações fixas, marcadas antes de tudo para "boa tarde" não virar período nem "bom dia" virar data. */
     static final List<String> GREETINGS = List.of("bom dia", "boa tarde", "boa noite");
 
+
     /** Verbos que, ao responder o nome, deixam claro que o cliente está corrigindo o agendamento. */
     static final Set<String> BOOKING_VERBS = Set.of("agendar", "marcar", "reservar", "cortar");
 
@@ -94,7 +96,7 @@ final class PortugueseLexicon {
     static final Set<String> KNOWN_WORDS = Set.of(
             "barbeiro", "barbeiros", "barbearia", "barbearias", "cabeleireiro", "cabelos", "horarios", "agendamento",
             "agendado", "agendada", "marcado", "marcada", "cancelado", "cancelada", "reservado", "reservada",
-            "quando", "mais", "manda", "mande", "pessoal", "algum", "alguma", "lugar", "vale", "esqueci");
+            "quando", "mais", "manda", "mande", "pessoal", "algum", "alguma", "lugar", "vale", "esqueci", "temos");
 
     private PortugueseLexicon() {
     }

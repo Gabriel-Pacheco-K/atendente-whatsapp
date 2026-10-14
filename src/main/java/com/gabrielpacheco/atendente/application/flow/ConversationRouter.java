@@ -31,9 +31,10 @@ import java.util.regex.Pattern;
 
 /**
  * Decide o que fazer com cada mensagem. A ordem importa: expiração, a conferência de um agendamento incerto,
- * pedidos que valem em qualquer passo (humano, menu, desistência), o passo atual, as digressões (uma pergunta no meio
- * do agendamento) e, por fim, o "não entendi".
- * O passo atual vem antes das digressões: "barba" na escolha do serviço é o serviço, não uma pergunta de preço.
+ * pedidos que valem em qualquer passo (humano, menu, desistência), perguntas, o passo atual, as outras digressões
+ * (um "oi", um "obrigado") e, por fim, o "não entendi". Uma pergunta é respondida antes do passo mesmo quando cita um
+ * serviço ou um dia: "quanto custa a barba?" no resumo não troca o serviço. Já "barba" na escolha do serviço não tem
+ * pista de pergunta e é o serviço.
  */
 @Component
 public class ConversationRouter {
@@ -41,6 +42,7 @@ public class ConversationRouter {
     private static final List<String> MENU_OPTIONS =
             List.of("Agendar", "Meus agendamentos", "Preços", "Endereço e horário");
     private static final Set<Intent> MAY_CARRY_BOOKING_DATA = Set.of(Intent.GREETING, Intent.AFFIRM, Intent.UNKNOWN);
+    private static final Set<Intent> QUESTIONS = Set.of(Intent.PRICES, Intent.OPENING_HOURS, Intent.ADDRESS, Intent.FAQ);
 
     /** Respostas que só fazem sentido para a pergunta anterior: depois de muito tempo, ninguém sabe a que se referem. */
     private static final Pattern BLIND_ANSWER = Pattern.compile(
@@ -135,11 +137,18 @@ public class ConversationRouter {
             StepResult desist = StepResult.of(Idle.EMPTY, Texts.desist());
             return t.entities().rescheduleRequested() ? desist.plus(Texts.rescheduleHint()) : desist;
         }
+        boolean midway = !(state instanceof Idle);
+        if (midway && QUESTIONS.contains(intent)) {
+            Optional<StepResult> answered = digression(state, t);
+            if (answered.isPresent()) {
+                return answered.get();
+            }
+        }
         Optional<StepResult> step = handleStep(state, t);
         if (step.isPresent()) {
             return step.get();
         }
-        if (!(state instanceof Idle)) {
+        if (midway) {
             Optional<StepResult> digression = digression(state, t);
             if (digression.isPresent()) {
                 return digression.get();

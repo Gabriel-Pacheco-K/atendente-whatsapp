@@ -99,7 +99,7 @@ public class BookingFlow {
 
     /**
      * Primeiro a resposta à sugestão de nome; depois uma correção do agendamento, que o interpretador só entrega
-     * com uma pista clara; por último o nome digitado.
+     * com uma pista clara; por último o nome digitado, que não vale junto com outro pedido ("tchau", "menu").
      */
     public Optional<StepResult> onAskingName(TurnContext t, AskingName state) {
         Entities found = t.entities();
@@ -116,20 +116,24 @@ public class BookingFlow {
         if (found.hasBookingData()) {
             return advance(t, state.draft().merge(found));
         }
-        if (found.personName() != null) {
+        boolean onlyTheName = t.intent() == Intent.UNKNOWN || t.intent() == Intent.GREETING;
+        if (found.personName() != null && onlyTheName) {
             return Optional.of(gaps.summarizeWithName(t, state.draft(), found.personName()));
         }
         return Optional.empty();
     }
 
     /**
-     * "sim" agenda; "não" volta para a escolha do dia; dados novos ("sim, mas às 16h") corrigem o resumo. Um "sim"
-     * que só repete os dados do resumo ("sim, amanhã às 15h") continua sendo um sim.
+     * "sim" agenda; "não" volta para a escolha do dia; dados novos ("sim, mas às 16h") ou outro nome ("meu nome é
+     * Ana") corrigem o resumo. Um "sim" que só repete os dados do resumo ("sim, amanhã às 15h") continua um sim.
      */
     public Optional<StepResult> onConfirmingBooking(TurnContext t, ConfirmingBooking state) {
         Entities found = t.entities();
         if (found.yesNoConflict()) {
             return Optional.of(StepResult.of(state, Texts.yesOrNo()));
+        }
+        if (found.personName() != null) {
+            return Optional.of(gaps.summarizeWithName(t, state.draft(), found.personName()));
         }
         if (found.hasBookingData()) {
             BookingDraft merged = state.draft().merge(found);

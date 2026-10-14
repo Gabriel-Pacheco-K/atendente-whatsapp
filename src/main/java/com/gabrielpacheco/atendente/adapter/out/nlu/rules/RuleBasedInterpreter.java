@@ -69,14 +69,14 @@ public final class RuleBasedInterpreter implements MessageInterpreter {
         Optional<DateMention> date = dates.extract(spans, context);
         boolean anyone = !nameExpected && anyProfessional.extract(spans);
         CatalogMention mention = catalogMention(spans, catalog.matcher());
-        if (nameExpected && !clearlyAboutBooking(time, date, corrected, mention)) {
+        boolean question = normalized.original().strip().endsWith("?");
+        if (nameExpected && !question && !clearlyAboutBooking(time, date, corrected, mention)) {
             mention = CatalogMention.NONE;
         }
         boolean bookingData = time != null || date.isPresent() || anyone || !mention.isEmpty();
-        String personName = nameExpected && !bookingData
-                ? names.extract(normalized.original(), context.offeredOptions()).orElse(null)
-                : null;
         Optional<FaqHit> faq = faqs.match(corrected.text(), context.faqs());
+        String personName = bookingData || faq.isPresent() ? null
+                : personName(normalized.original(), context, catalog.matcher()).orElse(null);
 
         Entities found = new Entities(mention.serviceId(), mention.professionalId(), anyone,
                 date.map(DateMention::date).orElse(null), date.map(DateMention::issue).orElse(null), time, option,
@@ -85,6 +85,15 @@ public final class RuleBasedInterpreter implements MessageInterpreter {
                 faq.map(FaqHit::keywords).orElse(0));
         return new Interpretation(classification.intent(), classification.confidence(),
                 withYesNoConflict(found, classification.yesNoConflict()), InterpreterKind.RULES);
+    }
+
+    /** Na pergunta do nome, a resposta; no resumo, só um nome apresentado ("meu nome é Ana") corrige o anterior. */
+    private Optional<String> personName(String original, InterpretationContext context, CatalogMatcher catalog) {
+        return switch (context.expectation()) {
+            case NAME -> names.extract(original, context.offeredOptions(), catalog);
+            case YES_NO -> names.extractIntroduced(original, catalog);
+            default -> Optional.empty();
+        };
     }
 
     private static CatalogMention catalogMention(Spans spans, CatalogMatcher matcher) {
@@ -101,7 +110,8 @@ public final class RuleBasedInterpreter implements MessageInterpreter {
 
     /**
      * Na hora do nome, serviço e profissional só contam com uma pista clara de correção: data, hora, verbo de
-     * agendamento ou "com o X". Sem isso, "Pedro Silva" é o nome do cliente.
+     * agendamento ou "com o X". Sem isso, "Pedro Silva" é o nome do cliente. Uma pergunta nunca é o nome, e o
+     * serviço dela continua valendo: "quanto custa a barba?" pergunta o preço da barba.
      */
     private static boolean clearlyAboutBooking(TimePreference time, Optional<DateMention> date, Correction text,
                                                CatalogMention mention) {

@@ -5,6 +5,7 @@ import com.gabrielpacheco.atendente.domain.conversation.ChoosingDate;
 import com.gabrielpacheco.atendente.domain.conversation.ChoosingProfessional;
 import com.gabrielpacheco.atendente.domain.conversation.ChoosingSlot;
 import com.gabrielpacheco.atendente.domain.conversation.ConfirmingBooking;
+import com.gabrielpacheco.atendente.domain.conversation.ConversationState;
 import com.gabrielpacheco.atendente.domain.conversation.Idle;
 import com.gabrielpacheco.atendente.fixtures.Dialogo;
 import com.gabrielpacheco.atendente.fixtures.FakeSchedulingPort.Operacao;
@@ -12,9 +13,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -57,17 +64,51 @@ class GlobalRulesDialogTest {
         assertThat(dialogo.agenda().postCount()).isZero();
     }
 
-    @Test
-    @DisplayName("Uma pergunta frequente no meio do fluxo é respondida, e a pergunta do passo se repete")
-    void perguntaFrequenteNoMeioDoFluxoDeveRepetirOPasso() {
-        dialogo.cliente("corte com o joao").estadoE(ChoosingDate.class);
+    /** Cada passo da conversa, com o caminho até ele. */
+    private record Passo(String nome, Supplier<Dialogo> caminho) {
 
-        dialogo.cliente("tem estacionamento?");
+        @Override
+        public String toString() {
+            return nome;
+        }
+    }
 
-        assertThat(dialogo.respostas()).hasSize(2);
-        dialogo.atendenteDiz("Temos 3 vagas em frente à barbearia e estacionamento rotativo na rua.")
-                .atendenteDiz("Voltando ao seu agendamento: para qual dia?")
-                .estadoE(ChoosingDate.class);
+    static Stream<Arguments> perguntasEmCadaPasso() {
+        List<Passo> passos = List.of(
+                new Passo("escolha do serviço", () -> Dialogo.naWeb().cliente("quero agendar")),
+                new Passo("escolha do profissional", () -> Dialogo.naWeb().cliente("quero cortar o cabelo amanha")),
+                new Passo("escolha do dia", () -> Dialogo.naWeb().cliente("corte com o joao")),
+                new Passo("escolha do horário", () -> Dialogo.naWeb().cliente("corte amanha com o joao")),
+                new Passo("nome", () -> Dialogo.naWeb().cliente("corte amanha 15h com o joao")),
+                new Passo("nome sugerido", () -> Dialogo.noWhatsApp("Gabriel Pacheco")
+                        .cliente("corte amanha 15h com o joao")),
+                new Passo("resumo", () -> Dialogo.naWeb().cliente("corte amanha 15h com o joao").cliente("Gabriel")),
+                new Passo("escolha do cancelamento", () -> Dialogo.naWeb()
+                        .cliente("corte amanha 10h com o joao").cliente("Gabriel").cliente("sim")
+                        .cliente("barba sexta 11h com o pedro").cliente("sim").cliente("cancelar")),
+                new Passo("confirmação do cancelamento", () -> Dialogo.naWeb()
+                        .cliente("corte amanha 10h com o joao").cliente("Gabriel").cliente("sim").cliente("cancelar")));
+        Map<String, String> respostas = Map.of(
+                "aceita pix?", "Aceitamos Pix, cartão de débito e crédito e dinheiro.",
+                "quanto custa a barba?", "*Barba* custa R$ 35,00 e leva 30 min.",
+                "vcs abrem sabado?", "Nosso horário de funcionamento:");
+        return passos.stream().flatMap(passo -> respostas.entrySet().stream()
+                .map(pergunta -> Arguments.of(passo, pergunta.getKey(), pergunta.getValue())));
+    }
+
+    @ParameterizedTest(name = "{0}: \"{1}\"")
+    @MethodSource("perguntasEmCadaPasso")
+    @DisplayName("Uma pergunta no meio do fluxo é respondida sem mudar nada, e a pergunta do passo se repete")
+    void perguntaNoMeioDoFluxoDeveSerRespondidaSemMudarOPasso(Passo passo, String pergunta, String resposta) {
+        Dialogo conversa = passo.caminho().get();
+        ConversationState antes = conversa.estado();
+        String nomeAntes = conversa.clienteSalvo().name();
+
+        conversa.cliente(pergunta).atendenteDiz(resposta).atendenteDiz("Voltando ao seu agendamento: ");
+
+        assertThat(conversa.respostas()).hasSize(2);
+        assertThat(conversa.estado()).isEqualTo(antes);
+        assertThat(conversa.clienteSalvo().name()).isEqualTo(nomeAntes);
     }
 
     @Test
