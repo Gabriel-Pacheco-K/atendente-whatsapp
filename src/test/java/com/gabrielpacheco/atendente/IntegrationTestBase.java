@@ -96,7 +96,7 @@ public abstract class IntegrationTestBase {
         GRAPH.resetAll();
         relogio.ajustar(MutableClock.REFERENCIA);
         agenda().comCatalogoDoSeed();
-        catalogo.invalidate();
+        catalogo.warmUp();
         WhatsAppHttp.aceitarEnvios(GRAPH);
         limitesDoChat.ifAvailable(ChatRateLimits::reset);
         limiteDoWhatsApp.ifAvailable(RateLimiter::reset);

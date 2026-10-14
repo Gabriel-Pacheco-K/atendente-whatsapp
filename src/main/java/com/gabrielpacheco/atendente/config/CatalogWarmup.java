@@ -17,6 +17,6 @@ class CatalogWarmup {
 
     @EventListener(ApplicationReadyEvent.class)
     void loadCatalog() {
-        catalogProvider.current();
+        catalogProvider.warmUp();
     }
 }

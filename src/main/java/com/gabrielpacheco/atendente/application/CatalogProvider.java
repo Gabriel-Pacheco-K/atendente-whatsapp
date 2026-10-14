@@ -24,9 +24,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
- * Serviços e profissionais do agendamento-api, com os apelidos do business.yml. Vencido o prazo, o catálogo
- * antigo continua valendo enquanto um novo é buscado em segundo plano, para que nenhum turno espere a recarga;
- * se a recarga falha, o antigo também continua valendo. Sem nenhuma carga bem-sucedida, o catálogo é offline.
+ * Serviços e profissionais do agendamento-api, com os apelidos do business.yml. Só a subida espera a carga: nos
+ * turnos, que seguram a trava da conversa, um catálogo vencido ou invalidado continua valendo enquanto outro é
+ * buscado em segundo plano, e o antigo também fica se a recarga falha. Sem nenhuma carga bem-sucedida, o catálogo
+ * é offline até a primeira recarga dar certo.
  */
 public class CatalogProvider {
 
@@ -54,29 +55,31 @@ public class CatalogProvider {
 
     public Catalog current() {
         Snapshot current = snapshot.get();
-        if (current == null || current.invalidated()) {
-            return loadNow(current);
+        boolean stale = current == null || current.invalidated()
+                || current.loadedAt().plus(ttl).isBefore(clock.instant());
+        if (!stale) {
+            return current.catalog();
         }
-        if (current.loadedAt().plus(ttl).isBefore(clock.instant())) {
-            refreshInBackground();
-        }
-        return current.catalog();
+        refreshInBackground();
+        // Uma recarga que já terminou (ou que rodou nesta thread) vale desde já.
+        Snapshot latest = snapshot.get();
+        return latest == null ? Catalog.offline() : latest.catalog();
     }
 
-    /** O catálogo está errado (a agenda não conhece um id dele): a próxima consulta recarrega na hora. */
+    /** Carrega na hora, esperando a agenda. Só para a subida, fora de qualquer turno. */
+    public void warmUp() {
+        try {
+            store(load());
+        } catch (SchedulingException e) {
+            log.warn("Não consegui carregar o catálogo da agenda na subida ({}); começando no modo offline",
+                    e.getClass().getSimpleName());
+        }
+    }
+
+    /** O catálogo está errado (a agenda não conhece um id dele): a próxima consulta já pede outro. */
     public void invalidate() {
         snapshot.updateAndGet(current -> current == null ? null
                 : new Snapshot(current.catalog(), current.loadedAt(), true));
-    }
-
-    private Catalog loadNow(Snapshot previous) {
-        try {
-            return store(load());
-        } catch (SchedulingException e) {
-            log.warn("Não consegui carregar o catálogo da agenda ({}); usando o {}", e.getClass().getSimpleName(),
-                    previous == null ? "modo offline" : "catálogo anterior");
-            return previous == null ? Catalog.offline() : previous.catalog();
-        }
     }
 
     private void refreshInBackground() {
@@ -87,8 +90,8 @@ public class CatalogProvider {
             try {
                 store(load());
             } catch (SchedulingException e) {
-                log.warn("Não consegui recarregar o catálogo da agenda ({}); mantendo o anterior",
-                        e.getClass().getSimpleName());
+                log.warn("Não consegui recarregar o catálogo da agenda ({}); mantendo o {}",
+                        e.getClass().getSimpleName(), snapshot.get() == null ? "modo offline" : "anterior");
             } finally {
                 refreshing.set(false);
             }

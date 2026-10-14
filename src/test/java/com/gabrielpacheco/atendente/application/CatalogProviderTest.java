@@ -59,6 +59,7 @@ class CatalogProviderTest {
     void deveJuntarOsApelidosPeloNome() {
         agenda.servicos = List.of(new ServiceType(1, "CORTE MASCULINO", 30, new BigDecimal("45.00"), List.of()));
 
+        catalogo.warmUp();
         Catalog carregado = catalogo.current();
 
         assertThat(carregado.online()).isTrue();
@@ -68,7 +69,7 @@ class CatalogProviderTest {
     @Test
     @DisplayName("Dentro da validade, não consulta a agenda de novo")
     void dentroDaValidadeNaoDeveConsultarDeNovo() {
-        catalogo.current();
+        catalogo.warmUp();
         relogio.avancar(Duration.ofSeconds(59));
 
         catalogo.current();
@@ -80,6 +81,7 @@ class CatalogProviderTest {
     @Test
     @DisplayName("Vencido, devolve o catálogo antigo na hora e recarrega em segundo plano")
     void vencidoDeveRecarregarEmSegundoPlano() {
+        catalogo.warmUp();
         Catalog antigo = catalogo.current();
         agenda.servicos = List.of(Barbearia.servicosDaAgenda().get(1));
         relogio.avancar(Duration.ofSeconds(61));
@@ -96,6 +98,7 @@ class CatalogProviderTest {
     @Test
     @DisplayName("Se a recarga falha, o catálogo antigo continua valendo")
     void recargaQueFalhaDeveManterOAntigo() {
+        catalogo.warmUp();
         Catalog antigo = catalogo.current();
         agenda.fora = true;
         relogio.avancar(Duration.ofSeconds(61));
@@ -108,24 +111,41 @@ class CatalogProviderTest {
     }
 
     @Test
-    @DisplayName("Sem nenhuma carga bem-sucedida, o catálogo é offline, e a próxima consulta tenta de novo")
-    void semCargaDeveFicarOfflineETentarDeNovo() {
+    @DisplayName("Com a agenda fora na subida, começa offline, e a consulta seguinte tenta de novo em segundo plano")
+    void semCargaNaSubidaDeveFicarOfflineETentarDeNovo() {
         agenda.fora = true;
+        catalogo.warmUp();
 
         assertThat(catalogo.current()).isEqualTo(Catalog.offline());
+        assertThat(mensagens()).anyMatch(m -> m.contains("começando no modo offline"));
 
         agenda.fora = false;
+        recargasPendentes.remove(0).run();
         assertThat(catalogo.current().online()).isTrue();
     }
 
     @Test
-    @DisplayName("Invalidado, recarrega na próxima consulta, sem esperar a validade")
-    void invalidadoDeveRecarregarNaHora() {
-        catalogo.current();
+    @DisplayName("Sem catálogo, a consulta nunca espera a agenda: devolve o offline e recarrega uma vez, em segundo plano")
+    void semCatalogoNaoDeveConsultarAAgendaNaHora() {
+        for (int turno = 0; turno < 3; turno++) {
+            assertThat(catalogo.current()).isEqualTo(Catalog.offline());
+        }
+
+        assertThat(agenda.cargas).isZero();
+        assertThat(recargasPendentes).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Invalidado, devolve o antigo e recarrega em segundo plano, sem esperar a validade")
+    void invalidadoDeveRecarregarSemEsperarAValidade() {
+        catalogo.warmUp();
+        Catalog antigo = catalogo.current();
         agenda.servicos = List.of(Barbearia.servicosDaAgenda().get(1));
 
         catalogo.invalidate();
 
+        assertThat(catalogo.current()).isSameAs(antigo);
+        recargasPendentes.remove(0).run();
         assertThat(catalogo.current().services()).extracting(ServiceType::name).containsExactly("Barba");
         assertThat(agenda.cargas).isEqualTo(2);
     }
@@ -135,7 +155,7 @@ class CatalogProviderTest {
     void deveAvisarDeApelidoSemServico() {
         agenda.servicos = Barbearia.servicosDaAgenda().subList(0, 3);
 
-        catalogo.current();
+        catalogo.warmUp();
 
         assertThat(mensagens()).anyMatch(m -> m.contains("apelidos para 'Sobrancelha'"));
     }
@@ -147,7 +167,7 @@ class CatalogProviderTest {
         comSegunda.add(new WorkingPeriod(DayOfWeek.MONDAY, LocalTime.of(9, 0), LocalTime.of(12, 0)));
         agenda.profissionais = List.of(new Professional(1, "João Batista", comSegunda));
 
-        catalogo.current();
+        catalogo.warmUp();
 
         assertThat(mensagens()).anyMatch(m -> m.contains("profissional #1 trabalha às segundas"));
     }

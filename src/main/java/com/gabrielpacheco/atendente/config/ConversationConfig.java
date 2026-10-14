@@ -36,7 +36,7 @@ public class ConversationConfig {
         };
     }
 
-    /** A recarga do catálogo vencido roda numa thread virtual, fora da trava de qualquer conversa. */
+    /** A recarga do catálogo roda numa thread virtual, fora da trava de qualquer conversa. */
     @Bean
     CatalogProvider catalogProvider(SchedulingPort scheduling, BusinessProfile business, Clock clock,
                                     AppProperties app) {
