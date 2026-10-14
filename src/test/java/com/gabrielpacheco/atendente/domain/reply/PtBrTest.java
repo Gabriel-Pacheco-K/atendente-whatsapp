@@ -77,8 +77,8 @@ class PtBrTest {
     @Test
     @DisplayName("Dia lotado concorda em gênero")
     void deveConcordarODiaLotado() {
-        assertThat(PtBr.fullDay(QUARTA)).isEqualTo("A quarta-feira, 14/10 já está lotada");
-        assertThat(PtBr.fullDay(SABADO)).isEqualTo("O sábado, 17/10 já está lotado");
+        assertThat(PtBr.fullDay(QUARTA)).isEqualTo("A quarta-feira, 14/10, já está lotada");
+        assertThat(PtBr.fullDay(SABADO)).isEqualTo("O sábado, 17/10, já está lotado");
     }
 
     @Test

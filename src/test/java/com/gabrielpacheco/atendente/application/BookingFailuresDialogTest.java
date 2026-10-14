@@ -45,8 +45,8 @@ class BookingFailuresDialogTest {
         ambiente.agenda().ocupar(PEDRO, SEXTA_10_30);
 
         dialogo.cliente("sim")
-                .atendenteDiz("Puxa, alguém acabou de reservar esse horário. Às 10:30 de *sexta-feira, 16/10*, o Pedro"
-                        + " já tem cliente. Os horários mais próximos com ele são:\n1. 11:00\n2. 11:15\n3. 11:30")
+                .atendenteDiz("Puxa, alguém acabou de reservar esse horário. Às 10:30 de *sexta-feira, 16/10*, Pedro"
+                        + " já tem cliente. Os horários mais próximos são:\n1. 11:00\n2. 11:15\n3. 11:30")
                 .estadoE(ChoosingSlot.class);
     }
 

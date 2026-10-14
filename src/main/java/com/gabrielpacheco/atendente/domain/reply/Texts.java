@@ -28,6 +28,9 @@ import java.util.stream.IntStream;
  */
 public final class Texts {
 
+    /** As opções do menu, na ordem dos números: são também os botões e o que o cliente pode escrever. */
+    public static final List<String> MENU_OPTIONS =
+            List.of("Agendar", "Meus agendamentos", "Preços", "Endereço e horário");
     private static final List<String> YES_NO = List.of("Sim", "Não");
     private static final String ANY_PROFESSIONAL = "Tanto faz";
     private static final int MAX_DETAIL_LENGTH = 200;
@@ -43,8 +46,8 @@ public final class Texts {
                 + "2. Ver ou cancelar seus agendamentos\n"
                 + "3. Preços e serviços\n"
                 + "4. Endereço e horário de funcionamento\n"
-                + "Se quiser falar com uma pessoa, escreva *atendente*.",
-                List.of("Agendar", "Meus agendamentos", "Preços", "Endereço"));
+                + "Se quiser falar com alguém da equipe, escreva *pessoa*.",
+                MENU_OPTIONS);
     }
 
     public static Reply prices(List<ServiceType> services) {
@@ -145,7 +148,7 @@ public final class Texts {
     }
 
     public static String exactMatch(SlotOption slot, ServiceType service) {
-        return "Boa notícia: o *" + slot.professionalName() + "* tem horário livre " + onDateAt(slot.startAt())
+        return "Boa notícia: *" + slot.professionalName() + "* tem horário livre " + onDateAt(slot.startAt())
                 + " para *" + service.name() + "* (" + durationAndPrice(service) + "). ";
     }
 
@@ -265,15 +268,15 @@ public final class Texts {
             case REQUESTED_TAKEN -> professional == null
                     ? "Às " + requestedTime(preference) + " de *" + PtBr.longDate(date)
                     + "* não tenho ninguém livre. Os horários mais próximos são:"
-                    : "Às " + requestedTime(preference) + " de *" + PtBr.longDate(date) + "*, o "
-                    + professional.firstName() + " já tem cliente. Os horários mais próximos com ele são:";
+                    : "Às " + requestedTime(preference) + " de *" + PtBr.longDate(date) + "*, "
+                    + professional.firstName() + " já tem cliente. Os horários mais próximos são:";
             case PERIOD_FULL -> periodOpening(preference) + " não tenho mais " + onDateBold(date)
                     + ", mas tenho estes:";
             case MOVED_TO_NEXT_DAY -> movedHeader(day, professional);
             case OUTSIDE_HOURS -> professional == null
                     ? "Às " + requestedTime(preference) + " ninguém atende " + PtBr.onDate(date)
                     + ". Os mais próximos são:"
-                    : "O " + professional.firstName() + " atende " + PtBr.onWeekday(date.getDayOfWeek()) + " "
+                    : professional.firstName() + " atende " + PtBr.onWeekday(date.getDayOfWeek()) + " "
                     + workingHours(professional, date.getDayOfWeek()) + ". Os mais próximos são:";
             case TOO_SOON -> "Esse horário já passou ou está muito em cima. Os próximos livres são:";
             case OFF_GRID -> "Os horários são de 15 em 15 minutos. Os mais próximos de " + requestedTime(preference)
@@ -290,7 +293,7 @@ public final class Texts {
                     + ") a barbearia estará fechada. ";
             case NOT_WORKING -> professional == null
                     ? "Ninguém atende " + PtBr.weekdayPlural(weekday, false) + ". "
-                    : "O " + professional.firstName() + " não atende " + PtBr.weekdayPlural(weekday, false) + ". ";
+                    : professional.firstName() + " não atende " + PtBr.weekdayPlural(weekday, false) + ". ";
             case FULL -> PtBr.fullDay(requested) + ". ";
             case AVAILABLE -> "";
         };
@@ -372,17 +375,18 @@ public final class Texts {
                 .map(booking -> "- *" + booking.serviceName() + "* com " + booking.professionalName() + ", "
                         + dateAt(booking.startAt()) + " (código #" + booking.appointmentId() + ")")
                 .collect(Collectors.joining("\n"));
-        return Reply.of("Seus próximos agendamentos:\n" + lines + "\nPara cancelar, mande *cancelar*.");
+        String header = bookings.size() == 1 ? "Seu próximo agendamento:" : "Seus próximos agendamentos:";
+        return Reply.of(header + "\n" + lines + "\nPara cancelar, mande *cancelar*.");
     }
 
     public static Reply chooseBookingToCancel(List<BookingRef> bookings) {
-        return Reply.of("Qual agendamento você quer cancelar?\n" + numbered(bookings.stream()
+        return new Reply("Qual agendamento você quer cancelar?\n" + numbered(bookings.stream()
                 .map(booking -> booking.serviceName() + " com " + booking.professionalName() + ", "
                         + dateAt(booking.startAt()))
-                .toList()));
+                .toList()), bookings.stream().map(Texts::bookingLabel).toList());
     }
 
-    /** O rótulo curto de um agendamento na lista de cancelamento: "Corte masculino com João, qua 14/10 15:00". */
+    /** O botão de um agendamento na lista de cancelamento: "Corte masculino com João, qua 14/10 15:00". */
     public static String bookingLabel(BookingRef booking) {
         return booking.serviceName() + " com " + firstWord(booking.professionalName()) + ", "
                 + PtBr.shortDateTime(booking.startAt());
@@ -420,8 +424,10 @@ public final class Texts {
                 + phone + ".");
     }
 
-    public static Reply cancelKept() {
-        return Reply.of("Combinado, seu horário continua marcado.");
+    /** {@code count} é quantos horários o cliente decidiu manter. */
+    public static Reply cancelKept(int count) {
+        return Reply.of(count > 1 ? "Combinado, seus horários continuam marcados."
+                : "Combinado, seu horário continua marcado.");
     }
 
     public static Reply rescheduleHint() {

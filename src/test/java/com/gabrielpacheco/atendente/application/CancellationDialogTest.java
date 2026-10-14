@@ -60,7 +60,10 @@ class CancellationDialogTest {
                         + "1. Corte masculino com João Batista, quarta-feira, 14/10, às 10:00\n"
                         + "2. Barba com Pedro Henrique, sexta-feira, 16/10, às 11:00")
                 .estadoE(ChoosingBookingToCancel.class);
-        dialogo.cliente("2").atendenteDiz("Você quer cancelar *Barba* com *Pedro Henrique*");
+        assertThat(dialogo.respostas().get(0).quickReplies())
+                .containsExactly("Corte masculino com João, qua 14/10 10:00", "Barba com Pedro, sex 16/10 11:00");
+        dialogo.cliente("Barba com Pedro, sex 16/10 11:00")
+                .atendenteDiz("Você quer cancelar *Barba* com *Pedro Henrique*");
         dialogo.cliente("sim").atendenteDiz("Pronto, cancelei.");
 
         assertThat(statusLocal(1)).isEqualTo(BookingStatus.SCHEDULED);
@@ -75,6 +78,17 @@ class CancellationDialogTest {
         dialogo.cliente("cancelar").cliente("não").atendenteDiz("Combinado, seu horário continua marcado.");
 
         assertThat(ambiente.agenda().agendamento(1).status()).isEqualTo(BookingStatus.SCHEDULED);
+    }
+
+    @Test
+    @DisplayName("\"não\" na escolha entre vários mantém todos, no plural")
+    void naoNaEscolhaEntreVariosDeveFalarNoPlural() {
+        agendarCorteAmanhaAs10();
+        agendarBarbaSextaAs11();
+
+        dialogo.cliente("quero cancelar").cliente("não")
+                .atendenteDiz("Combinado, seus horários continuam marcados.")
+                .estadoE(Idle.class);
     }
 
     @Test
@@ -224,13 +238,16 @@ class CancellationDialogTest {
     }
 
     @Test
-    @DisplayName("Lista os próximos agendamentos com o código")
+    @DisplayName("Lista os próximos agendamentos com o código, no singular quando é um só")
     void deveListarOsProximosAgendamentos() {
         agendarCorteAmanhaAs10();
 
         dialogo.cliente("meus agendamentos")
-                .atendenteDiz("Seus próximos agendamentos:\n- *Corte masculino* com João Batista, quarta-feira, 14/10,"
+                .atendenteDiz("Seu próximo agendamento:\n- *Corte masculino* com João Batista, quarta-feira, 14/10,"
                         + " às 10:00 (código #1)\nPara cancelar, mande *cancelar*.");
+
+        agendarBarbaSextaAs11();
+        dialogo.cliente("meus agendamentos").atendenteDiz("Seus próximos agendamentos:\n");
     }
 
     @Test

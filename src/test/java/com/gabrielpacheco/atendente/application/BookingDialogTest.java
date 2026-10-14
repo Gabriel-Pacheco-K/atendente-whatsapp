@@ -52,7 +52,7 @@ class BookingDialogTest {
                 .atendenteDiz("Olá! Eu sou o atendente virtual da *Barbearia Navalha de Ouro*")
                 .estadoE(Idle.class);
         dialogo.cliente("qro agnedar um corte amanha as 3 da tarde c/ o joao")
-                .atendenteDiz("Boa notícia: o *João Batista* tem horário livre na *quarta-feira, 14/10, às 15:00*"
+                .atendenteDiz("Boa notícia: *João Batista* tem horário livre na *quarta-feira, 14/10, às 15:00*"
                         + " para *Corte masculino* (30 min, R$ 45,00). Para reservar, qual nome eu coloco no agendamento?")
                 .estadoE(AskingName.class);
         dialogo.cliente("gabriel pacheco")
@@ -240,8 +240,8 @@ class BookingDialogTest {
         dialogo.agenda().ocupar(PEDRO, SEXTA.atTime(10, 0));
 
         dialogo.cliente("corte sexta 10h com o pedro")
-                .atendenteDiz("Às 10:00 de *sexta-feira, 16/10*, o Pedro já tem cliente. Os horários mais próximos"
-                        + " com ele são:\n1. 10:30\n2. 10:45\n3. 11:00")
+                .atendenteDiz("Às 10:00 de *sexta-feira, 16/10*, Pedro já tem cliente. Os horários mais próximos"
+                        + " são:\n1. 10:30\n2. 10:45\n3. 11:00")
                 .notaE("REQUESTED_TAKEN")
                 .estadoE(ChoosingSlot.class);
         dialogo.cliente("aceita pix?");
@@ -282,7 +282,7 @@ class BookingDialogTest {
         dialogo.agenda().lotar(JOAO, QUARTA);
 
         dialogo.cliente("corte quarta com o joao")
-                .atendenteDiz("A quarta-feira, 14/10 já está lotada. O próximo dia com horários é *quinta-feira, 15/10*:");
+                .atendenteDiz("A quarta-feira, 14/10, já está lotada. O próximo dia com horários é *quinta-feira, 15/10*:");
     }
 
     @Test
@@ -362,7 +362,7 @@ class BookingDialogTest {
         Dialogo dialogo = Dialogo.naWeb().cliente("corte amanha as 3 da tarde com o joao").cliente("Gabriel");
 
         dialogo.cliente("na verdade prefiro as 16h")
-                .atendenteDiz("Boa notícia: o *João Batista* tem horário livre na *quarta-feira, 14/10, às 16:00*")
+                .atendenteDiz("Boa notícia: *João Batista* tem horário livre na *quarta-feira, 14/10, às 16:00*")
                 .atendenteDiz("Confirma o agendamento?")
                 .atendenteDiz("Quarta-feira, 14/10, às 16:00")
                 .estadoE(ConfirmingBooking.class);
@@ -403,7 +403,7 @@ class BookingDialogTest {
         @DisplayName("Livre: é conferido de novo na agenda e segue")
         void horarioLivreDeveSeguir() {
             dialogo.cliente("14h")
-                    .atendenteDiz("Boa notícia: o *João Batista* tem horário livre na *sexta-feira, 16/10, às 14:00*")
+                    .atendenteDiz("Boa notícia: *João Batista* tem horário livre na *sexta-feira, 16/10, às 14:00*")
                     .estadoE(AskingName.class);
         }
 
@@ -413,7 +413,7 @@ class BookingDialogTest {
             dialogo.agenda().ocupar(JOAO, SEXTA.atTime(14, 0));
 
             dialogo.cliente("14h")
-                    .atendenteDiz("Às 14:00 de *sexta-feira, 16/10*, o João já tem cliente.")
+                    .atendenteDiz("Às 14:00 de *sexta-feira, 16/10*, João já tem cliente.")
                     .estadoE(ChoosingSlot.class);
         }
 
@@ -421,7 +421,7 @@ class BookingDialogTest {
         @DisplayName("Fora do expediente: diz quando o profissional atende, sem inventar cliente")
         void foraDoExpedienteDeveDizerOExpediente() {
             dialogo.cliente("as 20h")
-                    .atendenteDiz("O João atende na sexta das 09:00 às 12:00 e das 13:00 às 19:00. Os mais próximos são:")
+                    .atendenteDiz("João atende na sexta das 09:00 às 12:00 e das 13:00 às 19:00. Os mais próximos são:")
                     .atendenteNaoDiz("já tem cliente")
                     .notaE("OUTSIDE_HOURS");
         }

@@ -39,8 +39,6 @@ import java.util.regex.Pattern;
 @Component
 public class ConversationRouter {
 
-    private static final List<String> MENU_OPTIONS =
-            List.of("Agendar", "Meus agendamentos", "Preços", "Endereço e horário");
     private static final Set<Intent> MAY_CARRY_BOOKING_DATA = Set.of(Intent.GREETING, Intent.AFFIRM, Intent.UNKNOWN);
     private static final Set<Intent> QUESTIONS = Set.of(Intent.PRICES, Intent.OPENING_HOURS, Intent.ADDRESS, Intent.FAQ);
 
@@ -73,7 +71,7 @@ public class ConversationRouter {
     /** As opções mostradas no passo, para o interpretador reconhecer "a segunda" ou o texto de um botão. */
     public List<String> offeredLabels(ConversationState state, Catalog catalog) {
         return switch (state) {
-            case Idle idle -> MENU_OPTIONS;
+            case Idle idle -> Texts.MENU_OPTIONS;
             case ChoosingService s -> services(s, catalog).stream().map(ServiceType::name).toList();
             case ChoosingProfessional s -> Texts.professionalOptions(professionals(s, catalog));
             case ChoosingDate s -> List.of();

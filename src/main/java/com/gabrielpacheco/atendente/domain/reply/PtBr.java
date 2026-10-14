@@ -78,11 +78,11 @@ public final class PtBr {
         return preposition(day) + " " + dayName(day);
     }
 
-    /** "A quarta-feira, 14/10 já está lotada" ou "O sábado, 17/10 já está lotado". */
+    /** "A quarta-feira, 14/10, já está lotada" ou "O sábado, 17/10, já está lotado". */
     public static String fullDay(LocalDate date) {
         return isWeekend(date.getDayOfWeek())
-                ? "O " + longDate(date) + " já está lotado"
-                : "A " + longDate(date) + " já está lotada";
+                ? "O " + longDate(date) + ", já está lotado"
+                : "A " + longDate(date) + ", já está lotada";
     }
 
     /** "às segundas" ou "aos sábados"; com maiúscula quando abre a frase. */

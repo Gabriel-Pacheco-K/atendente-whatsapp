@@ -38,7 +38,7 @@ class GlobalRulesDialogTest {
     }
 
     @ParameterizedTest(name = "\"{0}\"")
-    @ValueSource(strings = {"quero falar com uma pessoa", "atendente"})
+    @ValueSource(strings = {"quero falar com uma pessoa", "pessoa", "atendente"})
     @DisplayName("Pedir uma pessoa funciona no meio do agendamento")
     void humanoDeveFuncionarEmQualquerPasso(String pedido) {
         noResumo().cliente(pedido)
@@ -155,7 +155,7 @@ class GlobalRulesDialogTest {
         dialogo.cliente("quero marcar uma barba");
 
         dialogo.cliente("meus agendamentos")
-                .atendenteDiz("Deixei o agendamento de lado. Seus próximos agendamentos:")
+                .atendenteDiz("Deixei o agendamento de lado. Seu próximo agendamento:")
                 .estadoE(Idle.class);
     }
 

@@ -82,7 +82,7 @@ public class CancellationFlow {
             return Optional.of(StepResult.of(new ConfirmingCancellation(chosen), Texts.confirmCancel(chosen)));
         }
         if (t.intent() == Intent.DENY) {
-            return Optional.of(StepResult.of(Idle.EMPTY, Texts.cancelKept()));
+            return Optional.of(StepResult.of(Idle.EMPTY, Texts.cancelKept(state.options().size())));
         }
         return Optional.empty();
     }
@@ -99,7 +99,7 @@ public class CancellationFlow {
         if (state.cancelAttempted()) {
             return Optional.of(afterUncertainCancel(t, state, yes));
         }
-        return Optional.of(yes ? cancel(t, state) : StepResult.of(Idle.EMPTY, Texts.cancelKept()));
+        return Optional.of(yes ? cancel(t, state) : StepResult.of(Idle.EMPTY, Texts.cancelKept(1)));
     }
 
     /**
@@ -117,7 +117,7 @@ public class CancellationFlow {
             return cancel(t, state);
         }
         return status.isPresent()
-                ? StepResult.of(Idle.EMPTY, Texts.cancelKept())
+                ? StepResult.of(Idle.EMPTY, Texts.cancelKept(1))
                 : StepResult.of(state, Texts.cancelUnchecked(phone()));
     }
 
