@@ -18,6 +18,7 @@ import com.gabrielpacheco.atendente.domain.conversation.ChoosingProfessional;
 import com.gabrielpacheco.atendente.domain.conversation.ChoosingService;
 import com.gabrielpacheco.atendente.domain.conversation.ChoosingSlot;
 import com.gabrielpacheco.atendente.domain.conversation.ConfirmingBooking;
+import com.gabrielpacheco.atendente.domain.conversation.ConversationState;
 import com.gabrielpacheco.atendente.domain.conversation.Idle;
 import com.gabrielpacheco.atendente.domain.conversation.PersonName;
 import com.gabrielpacheco.atendente.domain.reply.Reply;
@@ -26,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -61,7 +63,7 @@ public class BookingGaps {
     public StepResult advance(TurnContext t, BookingDraft draft, String prefix) {
         Catalog catalog = t.catalog();
         if (!isUsable(catalog)) {
-            return StepResult.of(t.state(), Texts.schedulingOffline(business.humanContactPhone()));
+            return StepResult.of(unchangedStep(t, draft), Texts.schedulingOffline(business.humanContactPhone()));
         }
         if (t.entities().dateIssue() != null) {
             draft = draft.withDate(null);
@@ -129,10 +131,11 @@ public class BookingGaps {
             catalogProvider.invalidate();
             return StepResult.of(Idle.EMPTY, Texts.genericError(business.humanContactPhone()));
         } catch (SchedulingException e) {
-            return StepResult.of(t.state(), Texts.availabilityUnavailable(business.humanContactPhone()));
+            return StepResult.of(unchangedStep(t, draft), Texts.availabilityUnavailable(business.humanContactPhone()));
         }
         Professional professional = draft.anyProfessional() ? null : professionalOf(draft, t.catalog()).orElseThrow();
-        return switch (suggester.suggest(day, draft.time(), settings.maxSlotOptions())) {
+        Duration duration = Duration.ofMinutes(service.durationMinutes());
+        return switch (suggester.suggest(day, draft.time(), duration, settings.maxSlotOptions())) {
             case Suggestion.ExactMatch match -> askNameOrSummarize(t, draft.withChosen(match.slot()), service,
                     prefix + Texts.exactMatch(match.slot(), service));
             case Suggestion.Alternatives alternatives -> StepResult.of(
@@ -155,6 +158,20 @@ public class BookingGaps {
         String suggested = suggestedName(t);
         Reply ask = suggested == null ? Texts.askName() : Texts.askNameSuggested(suggested);
         return StepResult.of(new AskingName(draft, suggested), ask).prefixed(prefix);
+    }
+
+    /**
+     * Sem a agenda, a conversa fica onde estava, a não ser que o passo guarde um horário que o cliente acabou de
+     * trocar: aí o "sim" seguinte agendaria o horário antigo. Nesse caso, volta para o dia com o rascunho corrigido.
+     */
+    private static ConversationState unchangedStep(TurnContext t, BookingDraft draft) {
+        ConversationState current = t.state();
+        BookingDraft shown = switch (current) {
+            case ConfirmingBooking s -> s.draft();
+            case AskingName s -> s.draft();
+            default -> draft;
+        };
+        return shown.equals(draft) ? current : new ChoosingDate(draft);
     }
 
     /** O primeiro nome do perfil do WhatsApp, se ele parecer um nome de verdade. */

@@ -267,6 +267,8 @@ public final class Texts {
                     : "O " + professional.firstName() + " atende " + PtBr.onWeekday(date.getDayOfWeek()) + " "
                     + workingHours(professional, date.getDayOfWeek()) + ". Os mais próximos são:";
             case TOO_SOON -> "Esse horário já passou ou está muito em cima. Os próximos livres são:";
+            case OFF_GRID -> "Os horários são de 15 em 15 minutos. Os mais próximos de " + requestedTime(preference)
+                    + " são:";
         };
     }
 

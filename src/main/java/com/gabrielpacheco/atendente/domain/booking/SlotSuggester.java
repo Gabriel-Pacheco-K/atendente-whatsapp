@@ -3,6 +3,7 @@ package com.gabrielpacheco.atendente.domain.booking;
 import com.gabrielpacheco.atendente.domain.booking.Suggestion.Alternatives;
 import com.gabrielpacheco.atendente.domain.booking.Suggestion.ExactMatch;
 import com.gabrielpacheco.atendente.domain.booking.Suggestion.NoSlots;
+import com.gabrielpacheco.atendente.domain.catalog.WorkingPeriod;
 import com.gabrielpacheco.atendente.domain.nlu.PartOfDay;
 import com.gabrielpacheco.atendente.domain.nlu.TimePreference;
 
@@ -22,8 +23,11 @@ import java.util.stream.IntStream;
 public final class SlotSuggester {
 
     private static final int NEAREST = 3;
+    /** O passo da grade do agendamento-api (slot-step), contado do início de cada turno. */
+    private static final int SLOT_STEP_MINUTES = 15;
 
-    public Suggestion suggest(DayAvailability day, TimePreference preference, int max) {
+    /** {@code serviceDuration} decide se um horário fora da lista ainda caberia no expediente. */
+    public Suggestion suggest(DayAvailability day, TimePreference preference, Duration serviceDuration, int max) {
         if (!day.hasFreeSlots()) {
             return new NoSlots(day.searchedUntil());
         }
@@ -35,12 +39,13 @@ public final class SlotSuggester {
         Note fallbackNote = day.movedFromRequestedDay() ? Note.MOVED_TO_NEXT_DAY : Note.NONE;
         return switch (preference) {
             case null -> new Alternatives(assign(day, spread(times, max)), fallbackNote);
-            case TimePreference.Exact exact -> exact(day, times, exact.time(), max);
+            case TimePreference.Exact exact -> exact(day, times, exact.time(), serviceDuration, max);
             case TimePreference.Period period -> period(day, times, period.part(), max);
         };
     }
 
-    private static Suggestion exact(DayAvailability day, List<LocalTime> times, LocalTime wanted, int max) {
+    private static Suggestion exact(DayAvailability day, List<LocalTime> times, LocalTime wanted,
+                                    Duration serviceDuration, int max) {
         if (!day.movedFromRequestedDay() && times.contains(wanted)) {
             return new ExactMatch(assign(day, List.of(wanted)).get(0));
         }
@@ -50,18 +55,29 @@ public final class SlotSuggester {
                 .limit(Math.min(NEAREST, max))
                 .sorted()
                 .toList();
-        Note note = day.movedFromRequestedDay() ? Note.MOVED_TO_NEXT_DAY : whyUnavailable(day, wanted);
+        Note note = day.movedFromRequestedDay() ? Note.MOVED_TO_NEXT_DAY
+                : whyUnavailable(day, wanted, serviceDuration);
         return new Alternatives(assign(day, nearest), note);
     }
 
-    /** Só é "já tem cliente" quando o horário está no expediente e ainda dá tempo de marcar. */
-    private static Note whyUnavailable(DayAvailability day, LocalTime wanted) {
+    /**
+     * Só é "já tem cliente" um horário que a agenda ofereceria se estivesse livre: com antecedência, com o serviço
+     * inteiro dentro de um turno e na grade de 15 em 15 minutos desse turno.
+     */
+    private static Note whyUnavailable(DayAvailability day, LocalTime wanted, Duration serviceDuration) {
         if (day.date().atTime(wanted).isBefore(day.bookableFrom())) {
             return Note.TOO_SOON;
         }
-        boolean someoneWorks = day.slots().stream()
-                .anyMatch(slots -> slots.professional().worksAt(day.date().getDayOfWeek(), wanted));
-        return someoneWorks ? Note.REQUESTED_TAKEN : Note.OUTSIDE_HOURS;
+        List<WorkingPeriod> fitting = day.slots().stream()
+                .flatMap(slots -> slots.professional().periodsOn(day.date().getDayOfWeek()).stream())
+                .filter(period -> period.fits(wanted, serviceDuration))
+                .toList();
+        if (fitting.isEmpty()) {
+            return Note.OUTSIDE_HOURS;
+        }
+        boolean onGrid = fitting.stream()
+                .anyMatch(period -> Duration.between(period.start(), wanted).toMinutes() % SLOT_STEP_MINUTES == 0);
+        return onGrid ? Note.REQUESTED_TAKEN : Note.OFF_GRID;
     }
 
     private static Suggestion period(DayAvailability day, List<LocalTime> times, PartOfDay part, int max) {

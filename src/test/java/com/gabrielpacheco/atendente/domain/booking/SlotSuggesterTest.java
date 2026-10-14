@@ -9,6 +9,7 @@ import com.gabrielpacheco.atendente.domain.nlu.TimePreference;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -28,6 +29,8 @@ class SlotSuggesterTest {
     private static final LocalDate TERCA = LocalDate.of(2026, 10, 20);
     private static final LocalDateTime AGORA_MAIS_30 = LocalDateTime.of(2026, 10, 13, 14, 30);
 
+    private static final Duration CORTE = Duration.ofMinutes(30);
+
     private final SlotSuggester sugestor = new SlotSuggester();
 
     @Test
@@ -35,7 +38,7 @@ class SlotSuggesterTest {
     void horarioLivreDeveSerEscolhido() {
         DayAvailability dia = dia(SEXTA, SEXTA, livres(JOAO, SEXTA, "09:00", "11:30"));
 
-        Suggestion sugestao = sugestor.suggest(dia, exata("10:00"), 6);
+        Suggestion sugestao = sugestor.suggest(dia, exata("10:00"), CORTE, 6);
 
         assertThat(sugestao).isEqualTo(new ExactMatch(opcao(SEXTA, "10:00", JOAO)));
     }
@@ -46,7 +49,7 @@ class SlotSuggesterTest {
         DayAvailability dia = dia(SEXTA, SEXTA,
                 new ProfessionalDaySlots(JOAO, SEXTA, horas("09:00", "09:30", "10:30", "11:00", "11:30")));
 
-        Suggestion sugestao = sugestor.suggest(dia, exata("10:00"), 6);
+        Suggestion sugestao = sugestor.suggest(dia, exata("10:00"), CORTE, 6);
 
         assertThat(sugestao).isEqualTo(new Alternatives(
                 List.of(opcao(SEXTA, "09:00", JOAO), opcao(SEXTA, "09:30", JOAO), opcao(SEXTA, "10:30", JOAO)),
@@ -58,8 +61,30 @@ class SlotSuggesterTest {
     void horarioForaDoExpedienteDeveTerNotaPropria() {
         DayAvailability dia = dia(SEXTA, SEXTA, livres(JOAO, SEXTA, "13:00", "18:30"));
 
-        assertThat(nota(sugestor.suggest(dia, exata("20:00"), 6))).isEqualTo(Note.OUTSIDE_HOURS);
-        assertThat(nota(sugestor.suggest(dia, exata("12:15"), 6))).isEqualTo(Note.OUTSIDE_HOURS);
+        assertThat(nota(sugestor.suggest(dia, exata("20:00"), CORTE, 6))).isEqualTo(Note.OUTSIDE_HOURS);
+        assertThat(nota(sugestor.suggest(dia, exata("12:15"), CORTE, 6))).isEqualTo(Note.OUTSIDE_HOURS);
+    }
+
+    @Test
+    @DisplayName("Horário em que o serviço não termina antes do fim do turno também é fora do expediente")
+    void servicoQueNaoCabeNoTurnoDeveSerForaDoExpediente() {
+        DayAvailability dia = dia(SEXTA, SEXTA, livres(JOAO, SEXTA, "13:00", "18:00"));
+
+        assertThat(nota(sugestor.suggest(dia, exata("18:45"), CORTE, 6))).isEqualTo(Note.OUTSIDE_HOURS);
+        assertThat(nota(sugestor.suggest(dia, exata("18:30"), Duration.ofMinutes(60), 6)))
+                .isEqualTo(Note.OUTSIDE_HOURS);
+        assertThat(nota(sugestor.suggest(dia, exata("18:30"), CORTE, 6))).isEqualTo(Note.REQUESTED_TAKEN);
+    }
+
+    @Test
+    @DisplayName("Horário fora da grade de 15 minutos não é \"já tem cliente\"")
+    void horarioForaDaGradeDeveTerNotaPropria() {
+        DayAvailability dia = dia(SEXTA, SEXTA, livres(JOAO, SEXTA, "09:00", "11:30"));
+
+        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, exata("10:10"), CORTE, 6);
+
+        assertThat(sugestao.note()).isEqualTo(Note.OFF_GRID);
+        assertThat(horarios(sugestao)).containsExactly("10:00", "10:15", "10:30");
     }
 
     @Test
@@ -68,8 +93,8 @@ class SlotSuggesterTest {
         LocalDate hoje = AGORA_MAIS_30.toLocalDate();
         DayAvailability dia = dia(hoje, hoje, livres(JOAO, hoje, "14:30", "18:30"));
 
-        assertThat(nota(sugestor.suggest(dia, exata("14:15"), 6))).isEqualTo(Note.TOO_SOON);
-        assertThat(nota(sugestor.suggest(dia, exata("10:00"), 6))).isEqualTo(Note.TOO_SOON);
+        assertThat(nota(sugestor.suggest(dia, exata("14:15"), CORTE, 6))).isEqualTo(Note.TOO_SOON);
+        assertThat(nota(sugestor.suggest(dia, exata("10:00"), CORTE, 6))).isEqualTo(Note.TOO_SOON);
     }
 
     @Test
@@ -77,7 +102,7 @@ class SlotSuggesterTest {
     void periodoDeveFiltrarOsHorarios() {
         DayAvailability dia = dia(SEXTA, SEXTA, livres(JOAO, SEXTA, "09:00", "11:30", "13:00", "18:30"));
 
-        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, periodo(PartOfDay.AFTERNOON), 6);
+        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, periodo(PartOfDay.AFTERNOON), CORTE, 6);
 
         assertThat(sugestao.note()).isEqualTo(Note.NONE);
         assertThat(sugestao.options()).allMatch(o -> PartOfDay.AFTERNOON.contains(o.startAt().toLocalTime()));
@@ -88,7 +113,7 @@ class SlotSuggesterTest {
     void periodoCheioDeveMostrarODiaTodo() {
         DayAvailability dia = dia(SEXTA, SEXTA, livres(JOAO, SEXTA, "13:00", "14:00"));
 
-        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, periodo(PartOfDay.MORNING), 6);
+        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, periodo(PartOfDay.MORNING), CORTE, 6);
 
         assertThat(sugestao.note()).isEqualTo(Note.PERIOD_FULL);
         assertThat(sugestao.options()).hasSize(5);
@@ -99,7 +124,7 @@ class SlotSuggesterTest {
     void semPreferenciaDeveEspalharSeisHorarios() {
         DayAvailability dia = dia(SEXTA, SEXTA, livres(JOAO, SEXTA, "08:00", "11:45"));
 
-        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, null, 6);
+        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, null, CORTE, 6);
 
         assertThat(horarios(sugestao)).containsExactly("08:00", "08:45", "09:30", "10:15", "11:00", "11:45");
     }
@@ -109,7 +134,7 @@ class SlotSuggesterTest {
     void poucosHorariosDevemSerMostradosTodos() {
         DayAvailability dia = dia(SEXTA, SEXTA, new ProfessionalDaySlots(JOAO, SEXTA, horas("09:00", "15:00")));
 
-        assertThat(horarios((Alternatives) sugestor.suggest(dia, null, 6))).containsExactly("09:00", "15:00");
+        assertThat(horarios((Alternatives) sugestor.suggest(dia, null, CORTE, 6))).containsExactly("09:00", "15:00");
     }
 
     @Test
@@ -118,7 +143,7 @@ class SlotSuggesterTest {
         DayAvailability dia = dia(SABADO, SABADO, livres(JOAO, SABADO, "08:00", "13:30"),
                 livres(PEDRO, SABADO, "08:00", "13:30"));
 
-        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, periodo(PartOfDay.MORNING), 6);
+        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, periodo(PartOfDay.MORNING), CORTE, 6);
 
         assertThat(sugestao.options()).containsExactly(opcao(SABADO, "08:00", JOAO), opcao(SABADO, "08:45", PEDRO),
                 opcao(SABADO, "09:30", JOAO), opcao(SABADO, "10:15", PEDRO), opcao(SABADO, "11:00", JOAO),
@@ -132,7 +157,7 @@ class SlotSuggesterTest {
                 livres(JOAO, TERCA, "09:00", "11:30", "13:00", "18:30"),
                 livres(PEDRO, TERCA, "10:00", "12:30", "14:00", "18:30"));
 
-        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, null, 6);
+        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, null, CORTE, 6);
 
         assertThat(sugestao.note()).isEqualTo(Note.MOVED_TO_NEXT_DAY);
         assertThat(sugestao.options()).containsExactly(opcao(TERCA, "09:00", JOAO), opcao(TERCA, "10:45", PEDRO),
@@ -146,7 +171,7 @@ class SlotSuggesterTest {
         DayAvailability dia = dia(SEXTA, SEXTA, new ProfessionalDaySlots(JOAO, SEXTA, horas("10:00")),
                 new ProfessionalDaySlots(PEDRO, SEXTA, horas("10:00", "11:00")));
 
-        assertThat(sugestor.suggest(dia, exata("10:00"), 6)).isEqualTo(new ExactMatch(opcao(SEXTA, "10:00", PEDRO)));
+        assertThat(sugestor.suggest(dia, exata("10:00"), CORTE, 6)).isEqualTo(new ExactMatch(opcao(SEXTA, "10:00", PEDRO)));
     }
 
     @Test
@@ -154,7 +179,7 @@ class SlotSuggesterTest {
     void diaMovidoDeveUsarOHorarioPedido() {
         DayAvailability dia = dia(SEXTA, SABADO, livres(JOAO, SABADO, "08:00", "13:30"));
 
-        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, exata("10:00"), 6);
+        Alternatives sugestao = (Alternatives) sugestor.suggest(dia, exata("10:00"), CORTE, 6);
 
         assertThat(sugestao.note()).isEqualTo(Note.MOVED_TO_NEXT_DAY);
         assertThat(horarios(sugestao)).containsExactly("09:45", "10:00", "10:15");
@@ -167,7 +192,7 @@ class SlotSuggesterTest {
         DayAvailability vazio = new DayAvailability(SEXTA, ate, List.of(), RequestedDayStatus.FULL, null, ate,
                 AGORA_MAIS_30);
 
-        assertThat(sugestor.suggest(vazio, exata("10:00"), 6)).isEqualTo(new NoSlots(ate));
+        assertThat(sugestor.suggest(vazio, exata("10:00"), CORTE, 6)).isEqualTo(new NoSlots(ate));
     }
 
     // Apoio

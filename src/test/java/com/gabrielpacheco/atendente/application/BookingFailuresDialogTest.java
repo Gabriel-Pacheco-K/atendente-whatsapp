@@ -51,6 +51,22 @@ class BookingFailuresDialogTest {
     }
 
     @Test
+    @DisplayName("Correção no resumo com a agenda fora não deixa o resumo antigo valendo para o \"sim\"")
+    void correcaoComAAgendaForaNaoDeveManterOResumoAntigo() {
+        noResumo();
+        ambiente.agenda().falharSempreCom(Operacao.DISPONIBILIDADE, new SchedulingUnavailableException("HTTP 503"));
+
+        dialogo.cliente("na verdade prefiro as 11h")
+                .atendenteDiz("Não consegui consultar a agenda agora.")
+                .estadoE(ChoosingDate.class);
+        ambiente.agenda().voltarAoNormal();
+        dialogo.cliente("sim").atendenteNaoDiz("Agendado");
+        dialogo.cliente("11h").atendenteDiz("Sexta-feira, 16/10, às 11:00").estadoE(ConfirmingBooking.class);
+
+        assertThat(ambiente.agenda().postCount()).isZero();
+    }
+
+    @Test
     @DisplayName("422 repassa o motivo da agenda e pede outro dia")
     void regraDeNegocioDeveRepassarOMotivo() {
         noResumo();

@@ -1,6 +1,7 @@
 package com.gabrielpacheco.atendente.domain.catalog;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalTime;
 
 public record WorkingPeriod(DayOfWeek day, LocalTime start, LocalTime end) {
@@ -11,7 +12,8 @@ public record WorkingPeriod(DayOfWeek day, LocalTime start, LocalTime end) {
         }
     }
 
-    public boolean contains(DayOfWeek day, LocalTime time) {
-        return this.day == day && !time.isBefore(start) && time.isBefore(end);
+    /** Um atendimento de {@code duration} que começa em {@code time} termina dentro deste turno. */
+    public boolean fits(LocalTime time, Duration duration) {
+        return !time.isBefore(start) && Duration.between(time, end).compareTo(duration) >= 0;
     }
 }

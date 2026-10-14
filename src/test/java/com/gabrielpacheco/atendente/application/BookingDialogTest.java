@@ -357,6 +357,22 @@ class BookingDialogTest {
         void horarioDeAlmocoDeveSerForaDoExpediente() {
             dialogo.cliente("12:30").notaE("OUTSIDE_HOURS").atendenteNaoDiz("já tem cliente");
         }
+
+        @Test
+        @DisplayName("Um serviço que passaria do fim do expediente também é fora do expediente")
+        void servicoQuePassaDoExpedienteDeveSerForaDoExpediente() {
+            dialogo.cliente("18:45").notaE("OUTSIDE_HOURS").atendenteNaoDiz("já tem cliente");
+        }
+
+        @Test
+        @DisplayName("Fora da grade de 15 minutos: explica a grade e oferece os mais próximos")
+        void horarioForaDaGradeDeveExplicarAGrade() {
+            dialogo.cliente("10:10")
+                    .atendenteDiz("Os horários são de 15 em 15 minutos. Os mais próximos de 10:10 são:\n"
+                            + "1. 10:00\n2. 10:15\n3. 10:30")
+                    .atendenteNaoDiz("já tem cliente")
+                    .notaE("OFF_GRID");
+        }
     }
 
     @Test
