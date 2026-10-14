@@ -139,8 +139,8 @@ entenderam, e os bastidores mostram "Claude indisponível". Por que opcional: as
 já resolvem; o resto é cauda longa, e não faz sentido pagar e mandar dado de cliente para fora em toda mensagem.
 
 **Por que o padrão é o `claude-haiku-5-5`.** A tarefa é classificar intenção e extrair entidades num esquema fechado,
-o nicho do modelo rápido e barato. Ele custa US$ 0,10 por milhão de tokens de entrada e US$ 0,50 de saída, 40 vezes
-menos que o Opus 5.5 (US$ 4 / US$ 20). As contas, com o catálogo de exemplo:
+o nicho do modelo rápido e barato. Ele custa US$ 0,10 por milhão de tokens de entrada e US$ 0,50 de saída, cerca de
+40 vezes menos que o maior modelo da família. As contas, com o catálogo de exemplo:
 
 | | Tokens | Custo |
 |---|---|---|
