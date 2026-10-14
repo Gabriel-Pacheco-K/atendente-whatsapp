@@ -8,7 +8,10 @@ import com.gabrielpacheco.atendente.adapter.in.whatsapp.WebhookVerification;
 import com.gabrielpacheco.atendente.adapter.in.whatsapp.WhatsAppMessageExtractor;
 import com.gabrielpacheco.atendente.adapter.out.whatsapp.GraphApiMessageSender;
 import com.gabrielpacheco.atendente.adapter.out.whatsapp.LoggingMessageSender;
+import com.gabrielpacheco.atendente.adapter.out.whatsapp.WhatsAppOwnerNotifier;
 import com.gabrielpacheco.atendente.application.port.out.MessageSender;
+import com.gabrielpacheco.atendente.application.port.out.OwnerNotifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -43,6 +46,11 @@ public class WhatsAppConfig {
     @ConditionalOnProperty(name = "app.whatsapp.sending.enabled", havingValue = "false", matchIfMissing = true)
     MessageSender loggingMessageSender() {
         return new LoggingMessageSender();
+    }
+
+    @Bean
+    OwnerNotifier ownerNotifier(MessageSender sender, @Value("${app.painel.notify-phone:}") String ownerPhone) {
+        return ownerPhone.isBlank() ? OwnerNotifier.NONE : new WhatsAppOwnerNotifier(sender, ownerPhone);
     }
 
     public static GraphApiMessageSender graphApiMessageSender(RestClient.Builder builder,

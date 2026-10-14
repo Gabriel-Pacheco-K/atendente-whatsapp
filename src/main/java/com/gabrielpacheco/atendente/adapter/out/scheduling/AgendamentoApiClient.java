@@ -5,8 +5,10 @@ import com.gabrielpacheco.atendente.adapter.out.scheduling.AgendamentoApiJson.Ap
 import com.gabrielpacheco.atendente.adapter.out.scheduling.AgendamentoApiJson.AvailabilityJson;
 import com.gabrielpacheco.atendente.adapter.out.scheduling.AgendamentoApiJson.CancelJson;
 import com.gabrielpacheco.atendente.adapter.out.scheduling.AgendamentoApiJson.ProfessionalJson;
+import com.gabrielpacheco.atendente.adapter.out.scheduling.AgendamentoApiJson.RevenueJson;
 import com.gabrielpacheco.atendente.adapter.out.scheduling.AgendamentoApiJson.ServiceJson;
 import com.gabrielpacheco.atendente.application.port.out.AppointmentInfo;
+import com.gabrielpacheco.atendente.application.port.out.DailyRevenue;
 import com.gabrielpacheco.atendente.application.port.out.Deadline;
 import com.gabrielpacheco.atendente.application.port.out.NewAppointment;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingException;
@@ -51,6 +53,9 @@ public class AgendamentoApiClient implements SchedulingPort {
             new ParameterizedTypeReference<>() {
             };
     private static final ParameterizedTypeReference<List<AppointmentJson>> APPOINTMENTS =
+            new ParameterizedTypeReference<>() {
+            };
+    private static final ParameterizedTypeReference<List<RevenueJson>> REVENUE =
             new ParameterizedTypeReference<>() {
             };
     private static final ParameterizedTypeReference<AvailabilityJson> AVAILABILITY =
@@ -155,6 +160,13 @@ public class AgendamentoApiClient implements SchedulingPort {
         return get(Operation.DAY_AGENDA, APPOINTMENTS, "/api/appointments?professionalId={id}&date={date}",
                 professionalId, date).stream()
                 .map(AppointmentJson::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<DailyRevenue> revenue(LocalDate from, LocalDate to) {
+        return get(Operation.REVENUE, REVENUE, "/api/appointments/revenue?from={from}&to={to}", from, to).stream()
+                .map(RevenueJson::toDomain)
                 .toList();
     }
 

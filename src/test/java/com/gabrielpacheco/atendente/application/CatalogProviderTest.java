@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.gabrielpacheco.atendente.application.port.out.AppointmentInfo;
+import com.gabrielpacheco.atendente.application.port.out.DailyRevenue;
 import com.gabrielpacheco.atendente.application.port.out.Deadline;
 import com.gabrielpacheco.atendente.application.port.out.NewAppointment;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingPort;
@@ -225,6 +226,11 @@ class CatalogProviderTest {
 
         @Override
         public AppointmentInfo updateStatus(long appointmentId, StatusChange change) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public List<DailyRevenue> revenue(LocalDate from, LocalDate to) {
             throw new UnsupportedOperationException();
         }
 

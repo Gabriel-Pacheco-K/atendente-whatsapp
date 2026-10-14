@@ -21,6 +21,12 @@
   </main>
 
   <div id="painel" hidden>
+    <nav class="abas" aria-label="Seções do painel">
+      <button id="aba-agenda" class="aba" aria-current="page">Agenda</button>
+      <button id="aba-faturamento" class="aba">Faturamento</button>
+    </nav>
+
+    <div id="tela-agenda">
     <header class="topo">
       <button id="dia-anterior" class="seta" aria-label="Dia anterior">‹</button>
       <div class="dia">
@@ -38,7 +44,64 @@
     </section>
 
     <p id="aviso" class="aviso" role="alert" hidden></p>
+
+    <div class="novo">
+      <button id="abrir-novo" class="principal" aria-expanded="false" aria-controls="form-novo">+ Marcar ou bloquear horário</button>
+    </div>
+
+    <form id="form-novo" class="cartao-form" hidden>
+      <h2>Novo horário</h2>
+      <fieldset class="tipo">
+        <legend>O que você quer fazer?</legend>
+        <label><input type="radio" name="tipo" value="cliente" checked> Marcar um cliente</label>
+        <label><input type="radio" name="tipo" value="bloqueio"> Bloquear (almoço, folga)</label>
+      </fieldset>
+      <label for="novo-profissional">Profissional</label>
+      <select id="novo-profissional" required></select>
+      <label for="novo-servico">Serviço (define quanto tempo ocupa)</label>
+      <select id="novo-servico" required></select>
+      <label for="novo-dia">Dia</label>
+      <input id="novo-dia" type="date" required>
+      <label for="novo-hora">Horário livre</label>
+      <select id="novo-hora" required></select>
+      <div id="campos-cliente">
+        <label for="novo-nome">Nome do cliente</label>
+        <input id="novo-nome" autocomplete="off" maxlength="100">
+        <label for="novo-telefone">Telefone com DDD</label>
+        <input id="novo-telefone" type="tel" inputmode="tel" autocomplete="off" maxlength="20">
+      </div>
+      <p id="novo-erro" class="erro" role="alert"></p>
+      <div class="acoes">
+        <button type="submit">Salvar</button>
+        <button type="button" id="fechar-novo" class="secundario">Fechar</button>
+      </div>
+    </form>
+
     <div id="profissionais"></div>
+    </div>
+
+    <div id="tela-faturamento" hidden>
+      <header class="topo">
+        <button id="ano-anterior" class="seta" aria-label="Ano anterior">‹</button>
+        <div class="dia"><h1 id="titulo-ano"></h1></div>
+        <button id="ano-seguinte" class="seta" aria-label="Ano seguinte">›</button>
+      </header>
+      <section class="resumo resumo-3" aria-live="polite">
+        <div><strong id="fat-ano">R$ 0,00</strong><span>no ano</span></div>
+        <div><strong id="fat-mes">R$ 0,00</strong><span id="fat-mes-nome">neste mês</span></div>
+        <div><strong id="fat-atendimentos">0</strong><span>atendimentos</span></div>
+      </section>
+      <p id="aviso-fat" class="aviso" role="alert" hidden></p>
+      <section class="grafico-caixa">
+        <h2>Quanto entrou por mês</h2>
+        <div id="grafico" class="grafico" aria-hidden="true"></div>
+        <table class="tabela">
+          <caption>Faturamento por mês (só atendimentos concluídos)</caption>
+          <thead><tr><th scope="col">Mês</th><th scope="col">Atendimentos</th><th scope="col">Valor</th></tr></thead>
+          <tbody id="tabela-meses"></tbody>
+        </table>
+      </section>
+    </div>
 
     <footer class="rodape">
       <button id="atualizar" class="link">Atualizar</button>

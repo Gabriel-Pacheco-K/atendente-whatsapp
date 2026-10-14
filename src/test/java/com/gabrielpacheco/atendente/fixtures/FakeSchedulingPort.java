@@ -1,6 +1,7 @@
 package com.gabrielpacheco.atendente.fixtures;
 
 import com.gabrielpacheco.atendente.application.port.out.AppointmentInfo;
+import com.gabrielpacheco.atendente.application.port.out.DailyRevenue;
 import com.gabrielpacheco.atendente.application.port.out.StatusChange;
 import com.gabrielpacheco.atendente.application.port.out.AppointmentNotFoundException;
 import com.gabrielpacheco.atendente.application.port.out.BookingRejectedException;
@@ -16,6 +17,8 @@ import com.gabrielpacheco.atendente.domain.catalog.ServiceType;
 import com.gabrielpacheco.atendente.domain.catalog.WorkingPeriod;
 
 import java.time.Duration;
+import java.math.BigDecimal;
+import java.util.TreeMap;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -168,6 +171,19 @@ public final class FakeSchedulingPort implements SchedulingPort {
         AppointmentInfo atualizado = comStatus(atual, change.result());
         agenda.put(appointmentId, atualizado);
         return atualizado;
+    }
+
+    @Override
+    public synchronized List<DailyRevenue> revenue(LocalDate from, LocalDate to) {
+        Map<LocalDate, List<AppointmentInfo>> porDia = new TreeMap<>();
+        agenda.values().stream()
+                .filter(a -> a.status() == BookingStatus.COMPLETED)
+                .filter(a -> !a.startAt().toLocalDate().isBefore(from) && !a.startAt().toLocalDate().isAfter(to))
+                .forEach(a -> porDia.computeIfAbsent(a.startAt().toLocalDate(), d -> new ArrayList<>()).add(a));
+        return porDia.entrySet().stream()
+                .map(dia -> new DailyRevenue(dia.getKey(), dia.getValue().size(), dia.getValue().stream()
+                        .map(AppointmentInfo::price).reduce(BigDecimal.ZERO, BigDecimal::add)))
+                .toList();
     }
 
     @Override

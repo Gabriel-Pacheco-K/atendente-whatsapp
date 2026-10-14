@@ -29,6 +29,9 @@ public interface SchedulingPort {
     /** Marca que o cliente veio ou faltou. Como o cancelamento, nunca é repetido. */
     AppointmentInfo updateStatus(long appointmentId, StatusChange change);
 
+    /** Faturamento por dia, de todos os profissionais; os dias sem nada concluído não vêm. */
+    List<DailyRevenue> revenue(LocalDate from, LocalDate to);
+
     /** Todos os agendamentos do profissional no dia, em qualquer status. Usado na reconciliação. */
     List<AppointmentInfo> dayAgenda(long professionalId, LocalDate date);
 

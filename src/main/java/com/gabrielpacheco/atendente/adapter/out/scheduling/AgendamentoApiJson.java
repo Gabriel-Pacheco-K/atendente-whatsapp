@@ -3,6 +3,7 @@ package com.gabrielpacheco.atendente.adapter.out.scheduling;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.gabrielpacheco.atendente.application.port.out.AppointmentInfo;
+import com.gabrielpacheco.atendente.application.port.out.DailyRevenue;
 import com.gabrielpacheco.atendente.application.port.out.NewAppointment;
 import com.gabrielpacheco.atendente.domain.booking.BookingStatus;
 import com.gabrielpacheco.atendente.domain.catalog.Professional;
@@ -79,5 +80,13 @@ final class AgendamentoApiJson {
     }
 
     record CancelJson(String reason) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    record RevenueJson(LocalDate date, int completed, BigDecimal revenue) {
+
+        DailyRevenue toDomain() {
+            return new DailyRevenue(date, completed, revenue == null ? BigDecimal.ZERO : revenue);
+        }
     }
 }

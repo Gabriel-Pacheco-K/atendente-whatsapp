@@ -20,7 +20,7 @@ services:
 
   agendamento-api:
     # Fixado no commit conferido; trocar por #v1.0.0 quando a tag existir.
-    build: https://github.com/Gabriel-Pacheco-K/agendamento-api.git#b11f03684d38ddbcef4664066f571ed6037e4931
+    build: https://github.com/Gabriel-Pacheco-K/agendamento-api.git#b2b4f7b34b4b12c76aac7259406858e80f09b531
     environment:
       DB_URL: "jdbc:postgresql://db:5432/agendamento"
       DB_USER: agendamento
@@ -67,6 +67,7 @@ services:
       WHATSAPP_VERIFY_TOKEN: "${WHATSAPP_VERIFY_TOKEN:-}"
       WHATSAPP_APP_SECRET: "${WHATSAPP_APP_SECRET:-}"
       PAINEL_SENHA: "${PAINEL_SENHA:-}"
+      PAINEL_AVISO_WHATSAPP: "${PAINEL_AVISO_WHATSAPP:-}"
       WHATSAPP_PHONE_NUMBER_ID: "${WHATSAPP_PHONE_NUMBER_ID:-}"
       WHATSAPP_SENDING_ENABLED: "${WHATSAPP_SENDING_ENABLED:-false}"
       WHATSAPP_ACCESS_TOKEN: "${WHATSAPP_ACCESS_TOKEN:-}"

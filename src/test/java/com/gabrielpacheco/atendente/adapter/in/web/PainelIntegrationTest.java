@@ -155,4 +155,115 @@ class PainelIntegrationTest extends IntegrationTestBase {
         mvc.perform(post("/api/painel/logout").cookie(cookie)).andExpect(status().is2xxSuccessful());
         mvc.perform(get("/api/painel/agenda").cookie(cookie)).andExpect(status().isUnauthorized());
     }
+
+    private static final LocalDate QUARTA = HOJE.plusDays(1);
+
+    @Test
+    @DisplayName("Lista profissionais, serviços e horários livres para o formulário")
+    void formulario() throws Exception {
+        Cookie cookie = entrar();
+        agenda().comHorariosLivres(JOAO, CORTE, QUARTA, "09:00", "09:30");
+
+        mvc.perform(get("/api/painel/catalogo").cookie(cookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.professionals[0].name").value(JOAO.name()))
+                .andExpect(jsonPath("$.services[0].price").value(45.0));
+        mvc.perform(get("/api/painel/horarios").cookie(cookie).param("professionalId", "1").param("serviceId", "1")
+                        .param("date", QUARTA.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0]").value("09:00"))
+                .andExpect(jsonPath("$[1]").value("09:30"));
+        mvc.perform(get("/api/painel/catalogo")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("O dono marca um cliente que ligou")
+    void marcarNaMao() throws Exception {
+        Cookie cookie = entrar();
+        agenda().aceitandoAgendamento(30, JOAO, CORTE, QUARTA.atTime(9, 0), "Bento Ramos", "48999990002");
+
+        mvc.perform(post("/api/painel/agendamentos").cookie(cookie).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"professionalId":1,"serviceId":1,"date":"2026-10-14","time":"09:00",
+                                 "name":" Bento Ramos ","phone":"48999990002","block":false}"""))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(30))
+                .andExpect(jsonPath("$.blocked").value(false));
+
+        AGENDA.verify(exactly(1), AgendaHttp.postsDeAgendamento().withRequestBody(equalToJson("""
+                {"professionalId":1,"serviceId":1,"startAt":"2026-10-14T09:00","customerName":"Bento Ramos",
+                 "customerPhone":"48999990002"}""", true, true)));
+    }
+
+    @Test
+    @DisplayName("Bloquear ocupa o horário sem cliente e não entra no previsto")
+    void bloquear() throws Exception {
+        Cookie cookie = entrar();
+        agenda().aceitandoAgendamento(31, JOAO, CORTE, QUARTA.atTime(12, 0), "Horário bloqueado", "00000000");
+
+        mvc.perform(post("/api/painel/agendamentos").cookie(cookie).contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"professionalId":1,"serviceId":1,"date":"2026-10-14","time":"12:00","block":true}"""))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.blocked").value(true))
+                .andExpect(jsonPath("$.phone").doesNotExist());
+
+        agenda().comAgendaDoDia(JOAO, QUARTA, AgendaHttp.agendamento(31, JOAO, CORTE, QUARTA.atTime(12, 0),
+                        "Horário bloqueado", "00000000", "SCHEDULED"))
+                .comAgendaDoDia(PEDRO, QUARTA);
+        mvc.perform(get("/api/painel/agenda").param("date", QUARTA.toString()).cookie(cookie))
+                .andExpect(jsonPath("$.professionals[0].appointments[0].blocked").value(true))
+                .andExpect(jsonPath("$.appointments").value(0))
+                .andExpect(jsonPath("$.expected").value(0));
+    }
+
+    @Test
+    @DisplayName("Sem nome, sem telefone ou com horário ocupado, explica o que houve")
+    void marcarComErro() throws Exception {
+        Cookie cookie = entrar();
+        String base = "{\"professionalId\":1,\"serviceId\":1,\"date\":\"2026-10-14\",\"time\":\"09:00\",";
+        mvc.perform(post("/api/painel/agendamentos").cookie(cookie).contentType(MediaType.APPLICATION_JSON)
+                        .content(base + "\"name\":\"\",\"phone\":\"48999990002\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("Coloque o nome do cliente."));
+        mvc.perform(post("/api/painel/agendamentos").cookie(cookie).contentType(MediaType.APPLICATION_JSON)
+                        .content(base + "\"name\":\"Ana Souza\",\"phone\":\"abc\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/painel/agendamentos").cookie(cookie).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Ana Souza\"}"))
+                .andExpect(status().isBadRequest());
+
+        agenda().responder(com.github.tomakehurst.wiremock.client.WireMock.post(urlEqualTo(AGENDAMENTOS))
+                .willReturn(json(409, problema(409, "Horário indisponível", "Ocupado"))));
+        mvc.perform(post("/api/painel/agendamentos").cookie(cookie).contentType(MediaType.APPLICATION_JSON)
+                        .content(base + "\"name\":\"Ana Souza\",\"phone\":\"48999990001\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("Esse horário já está ocupado. Escolha outro."));
+        AGENDA.verify(exactly(1), AgendaHttp.postsDeAgendamento());
+    }
+
+    @Test
+    @DisplayName("O faturamento do ano soma os dias concluídos em cada mês")
+    void faturamento() throws Exception {
+        Cookie cookie = entrar();
+        agenda().responder(com.github.tomakehurst.wiremock.client.WireMock.get(
+                        urlEqualTo(AGENDAMENTOS + "/revenue?from=2026-01-01&to=2026-12-31"))
+                .willReturn(json(200, """
+                        [{"date":"2026-09-30","completed":2,"revenue":80.00},
+                         {"date":"2026-10-01","completed":1,"revenue":45.00},
+                         {"date":"2026-10-13","completed":3,"revenue":150.00}]""")));
+
+        mvc.perform(get("/api/painel/faturamento").cookie(cookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.year").value(2026))
+                .andExpect(jsonPath("$.completed").value(6))
+                .andExpect(jsonPath("$.revenue").value(275.0))
+                .andExpect(jsonPath("$.months.length()").value(12))
+                .andExpect(jsonPath("$.months[8].revenue").value(80.0))
+                .andExpect(jsonPath("$.months[9].completed").value(4))
+                .andExpect(jsonPath("$.months[9].revenue").value(195.0))
+                .andExpect(jsonPath("$.months[0].revenue").value(0));
+        mvc.perform(get("/api/painel/faturamento").param("ano", "1999").cookie(cookie))
+                .andExpect(status().isBadRequest());
+    }
 }

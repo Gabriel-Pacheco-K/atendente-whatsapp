@@ -13,6 +13,7 @@ import com.gabrielpacheco.atendente.application.flow.BookingReconciler;
 import com.gabrielpacheco.atendente.application.flow.CancellationFlow;
 import com.gabrielpacheco.atendente.application.flow.ConversationRouter;
 import com.gabrielpacheco.atendente.application.flow.InfoResponder;
+import com.gabrielpacheco.atendente.application.port.out.AppointmentInfo;
 import com.gabrielpacheco.atendente.application.port.out.MessageInterpreter;
 import com.gabrielpacheco.atendente.domain.business.BusinessProfile;
 import com.gabrielpacheco.atendente.domain.catalog.Professional;
@@ -21,6 +22,7 @@ import com.gabrielpacheco.atendente.domain.conversation.Channel;
 import com.gabrielpacheco.atendente.domain.conversation.CustomerRef;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,6 +45,7 @@ public final class Ambiente {
     private final InMemoryBookingStore agendamentos = new InMemoryBookingStore();
     private final InMemoryProcessedMessageStore processadas = new InMemoryProcessedMessageStore(relogio);
     private final ConversationService atendente;
+    private final List<AppointmentInfo> avisosAoDono = new ArrayList<>();
 
     public Ambiente() {
         this(Barbearia.profissionais(), Barbearia.servicosDaAgenda());
@@ -62,7 +65,7 @@ public final class Ambiente {
         BookingGaps lacunas = new BookingGaps(disponibilidade, catalogo, negocio, configuracao);
         BookingConfirmation confirmacao = new BookingConfirmation(lacunas, reconciliador, agenda, agendamentos,
                 acao -> {
-                }, negocio, configuracao);
+                }, negocio, configuracao, avisosAoDono::add);
         CancellationFlow cancelamento = new CancellationFlow(agenda, agendamentos, negocio, configuracao);
         ConversationRouter roteador = new ConversationRouter(new BookingFlow(lacunas, confirmacao, negocio),
                 confirmacao, cancelamento, new InfoResponder(negocio), negocio, configuracao);
@@ -86,6 +89,11 @@ public final class Ambiente {
 
     public Dialogo clienteNoWhatsApp(String waId, String nomeDoPerfil) {
         return new Dialogo(this, new CustomerRef(Channel.WHATSAPP, waId, "+" + waId, nomeDoPerfil));
+    }
+
+    /** Os avisos que o dono recebeu no WhatsApp, um por horário marcado pelo atendente. */
+    public List<AppointmentInfo> avisosAoDono() {
+        return avisosAoDono;
     }
 
     public MutableClock relogio() {

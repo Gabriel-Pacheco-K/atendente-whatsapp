@@ -21,8 +21,10 @@ Ele grava os horários no [agendamento-api](https://github.com/Gabriel-Pacheco-K
 - Se o horário está ocupado, sugere os mais próximos.
 - Lista e cancela os agendamentos do cliente.
 - Responde preço, endereço e horário de funcionamento, até no meio de um agendamento.
-- Tem um painel para o dono (`/painel.html`, com senha): a agenda do dia de cada barbeiro, quanto já entrou e
-  botões de concluído, não veio e cancelar.
+- Tem um painel para o dono (`/painel.html`, com senha): a agenda do dia de cada barbeiro com botões de concluído,
+  não veio e cancelar; marcar na mão quem ligou; bloquear horário de almoço ou folga; e o faturamento do dia, do mês
+  e do ano, com gráfico.
+- Avisa o dono no WhatsApp a cada horário marcado pelo atendente (opcional).
 - Funciona no chat web (uma página parecida com o WhatsApp) e no WhatsApp de verdade, pela Cloud API da Meta.
 
 Não precisa de IA paga: tem um motor de regras próprio para o português. Se quiser, dá para ligar o Claude para as
@@ -58,6 +60,9 @@ Abra http://localhost:8080 e converse. O compose sobe o PostgreSQL, o agendament
 exemplo e o atendente.
 
 Para abrir o painel do dono, coloque `PAINEL_SENHA=uma-senha` no `.env` e entre em http://localhost:8080/painel.html.
+Para o dono receber um aviso no WhatsApp a cada horário novo, coloque o número dele em `PAINEL_AVISO_WHATSAPP`
+(com DDI e DDD, ex.: `5548999990000`). A Meta só entrega mensagem livre para quem falou com o número do atendente nas
+últimas 24 horas, então o dono manda um "oi" para ele uma vez por dia.
 
 Para ligar no WhatsApp com o número de teste grátis da Meta, o passo a passo está em
 [docs/detalhes-tecnicos.md](docs/detalhes-tecnicos.md#whatsapp-com-o-número-de-teste-da-meta).
@@ -68,7 +73,7 @@ Para ligar no WhatsApp com o número de teste grátis da Meta, o passo a passo e
 mvn verify
 ```
 
-São 985 testes: unitários, conversas inteiras simuladas, integração com PostgreSQL real (Testcontainers) e a API de
+São 992 testes: unitários, conversas inteiras simuladas, integração com PostgreSQL real (Testcontainers) e a API de
 agendamento simulada com WireMock. No CI ainda roda um teste ponta a ponta com o agendamento-api de verdade.
 
 ## Tecnologias
@@ -85,7 +90,6 @@ Java 21, Spring Boot 3.3, PostgreSQL 16, Flyway, Testcontainers, WireMock, ArchU
 
 - Lembrete automático um dia antes do horário.
 - Remarcar direto, sem precisar cancelar e marcar de novo.
-- Faturamento do mês e do ano no painel, com gráfico.
 
 Quer ver todas as decisões técnicas em detalhe? Estão em [docs/detalhes-tecnicos.md](docs/detalhes-tecnicos.md).
 

@@ -68,6 +68,8 @@ class BookingDialogTest {
         assertThat(gravado.customerId()).isEqualTo(dialogo.clienteSalvo().id());
         assertThat(gravado.serviceId()).isEqualTo(CORTE.id());
         assertThat(gravado.startAt()).isEqualTo(QUARTA.atTime(15, 0));
+        assertThat(dialogo.ambiente().avisosAoDono()).singleElement()
+                .satisfies(aviso -> assertThat(aviso.customerName()).isEqualTo("Gabriel Pacheco"));
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.gabrielpacheco.atendente.application.port.out.AppointmentNotFoundExce
 import com.gabrielpacheco.atendente.application.port.out.BookingRejectedException;
 import com.gabrielpacheco.atendente.application.port.out.BookingStore;
 import com.gabrielpacheco.atendente.application.port.out.NewAppointment;
+import com.gabrielpacheco.atendente.application.port.out.OwnerNotifier;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingContractException;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingException;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingPort;
@@ -50,9 +51,12 @@ public class BookingConfirmation {
     private final BusinessProfile business;
     private final ConversationSettings settings;
 
+    private final OwnerNotifier owner;
+
     public BookingConfirmation(BookingGaps gaps, BookingReconciler reconciler, SchedulingPort scheduling,
                                BookingStore bookings, TransactionEvents transactionEvents, BusinessProfile business,
-                               ConversationSettings settings) {
+                               ConversationSettings settings, OwnerNotifier owner) {
+        this.owner = owner;
         this.gaps = gaps;
         this.reconciler = reconciler;
         this.scheduling = scheduling;
@@ -199,6 +203,7 @@ public class BookingConfirmation {
             BookingStatus status = info.status() == BookingStatus.UNKNOWN ? BookingStatus.SCHEDULED : info.status();
             bookings.save(new Booking(id, customerId, draft.serviceId(), info.serviceName(), info.professionalId(),
                     info.professionalName(), info.price(), info.startAt(), info.endAt(), status));
+            owner.newBooking(info);
         }
         return StepResult.of(new Idle(new LastBooking(info.ref(), t.now())), reply);
     }
