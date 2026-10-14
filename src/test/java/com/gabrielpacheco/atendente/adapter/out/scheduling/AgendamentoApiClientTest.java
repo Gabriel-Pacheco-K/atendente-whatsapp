@@ -22,6 +22,7 @@ import com.gabrielpacheco.atendente.fixtures.MutableClock;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -81,6 +82,19 @@ class AgendamentoApiClientTest {
     private final AgendaHttp agenda = AgendaHttp.em(API);
     private SchedulingPort cliente;
     private CapturaDeLogs logs;
+
+    /**
+     * A primeira chamada da JVM ainda carrega o cliente HTTP e o Jackson, e esse tempo conta no limite da chamada,
+     * que nestes testes é curto.
+     */
+    @BeforeAll
+    static void aquecerOClienteHttp() {
+        AgendaHttp.em(API).aceitandoAgendamento(7, JOAO, CORTE, QUARTA_15H, "Gabriel Pacheco", "+55 48 99999-0001");
+        SchedulingClientConfig.create(RestClient.builder(), new AppProperties.SchedulingApi(API.baseUrl(),
+                Duration.ofSeconds(1), Duration.ofSeconds(30), Duration.ofSeconds(60), Duration.ofSeconds(1), 14))
+                .book(PEDIDO);
+        API.resetAll();
+    }
 
     @BeforeEach
     void criarCliente() {
