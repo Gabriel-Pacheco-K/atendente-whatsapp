@@ -66,7 +66,8 @@ public class BookingGaps {
             return StepResult.of(unchangedStep(t, draft), Texts.schedulingOffline(business.humanContactPhone()));
         }
         if (t.entities().dateIssue() != null) {
-            draft = draft.withDate(null);
+            // O problema da data vem antes das outras lacunas: no turno seguinte, ninguém mais saberia dele.
+            return StepResult.of(new ChoosingDate(draft.withDate(null)), dateIssue(t)).prefixed(prefix);
         }
         Optional<ServiceType> service = Optional.ofNullable(draft.serviceId()).flatMap(catalog::service);
         if (service.isEmpty()) {
@@ -79,7 +80,7 @@ public class BookingGaps {
             draft = draft.withProfessional(catalog.professionals().get(0).id());
         }
         if (draft.date() == null) {
-            return StepResult.of(new ChoosingDate(draft), askDate(t)).prefixed(prefix);
+            return StepResult.of(new ChoosingDate(draft), Texts.askDate()).prefixed(prefix);
         }
         if (draft.chosen() == null) {
             return offerSlots(t, draft, service.get(), prefix);
@@ -114,10 +115,7 @@ public class BookingGaps {
                 Texts.askProfessional(offered));
     }
 
-    private Reply askDate(TurnContext t) {
-        if (t.entities().dateIssue() == null) {
-            return Texts.askDate();
-        }
+    private Reply dateIssue(TurnContext t) {
         return Texts.dateIssue(t.entities().dateIssue(), settings.daysAhead(),
                 t.localNow().toLocalDate().plusDays(settings.daysAhead()));
     }

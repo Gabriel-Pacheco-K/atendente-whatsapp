@@ -14,6 +14,7 @@ import static com.gabrielpacheco.atendente.domain.nlu.Intent.AFFIRM;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.BOOK;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.CANCEL_BOOKING;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.DENY;
+import static com.gabrielpacheco.atendente.domain.nlu.Intent.GOODBYE;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.GREETING;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.HUMAN;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.MY_BOOKINGS;
@@ -25,9 +26,13 @@ import static com.gabrielpacheco.atendente.domain.nlu.Intent.THANKS;
 /** O vocabulário do motor de regras, já no formato normalizado (sem acentos, "pra" vira "para"). */
 final class PortugueseLexicon {
 
+    /** Despedidas, marcadas antes da data como as saudações: "até amanhã" não é um pedido para amanhã. */
+    static final List<String> FAREWELLS = List.of("ate mais", "ate logo", "ate depois", "ate a proxima", "ate amanha",
+            "ate segunda", "ate terca", "ate quarta", "ate quinta", "ate sexta", "ate sabado", "abraco", "abracos");
+
     /** Da expressão mais longa para a mais curta: "horario de funcionamento" consome "horario". */
     static final List<Cue> CUES = Stream.of(
-                    weighted(BOOK, 3, "agendar", "marcar", "reservar", "tem horario", "tem vaga"),
+                    weighted(BOOK, 3, "agendar", "marcar", "reservar", "tem horario", "tem vaga", "o quanto antes"),
                     weighted(BOOK, 2, "cortar", "vaga", "encaixe"),
                     weighted(BOOK, 1, "horario", "da para"),
                     weighted(CANCEL_BOOKING, 3, "cancelar", "cancela", "desmarcar", "desmarca", "remarcar",
@@ -52,13 +57,15 @@ final class PortugueseLexicon {
                     weighted(RESTART, 2, "inicio", "voltar", "desistir"),
                     weighted(AFFIRM, 3, "sim", "pode ser", "confirmo", "confirma"),
                     weighted(AFFIRM, 2, "isso", "pode", "ok", "beleza", "certo", "claro", "fechado", "bora", "uhum",
-                            "aham", "perfeito"),
+                            "aham", "perfeito", "show", "top", "massa"),
                     weighted(DENY, 3, "nao", "negativo", "nao quero", "esquece", "deixa para la", "deixa quieto",
                             "pode deixar", "pode manter", "manter", "mantem", "mantenha", "outro dia", "outro horario",
                             "outra data"),
                     weighted(DENY, 2, "errado", "mudar", "trocar", "outro", "outra"),
                     weighted(THANKS, 4, "muito obrigado", "muito obrigada"),
-                    weighted(THANKS, 3, "obrigado", "obrigada", "valeu", "agradeco"),
+                    weighted(THANKS, 3, "obrigado", "obrigada", "valeu", "agradeco", "tmj"),
+                    weighted(GOODBYE, 3, Stream.concat(FAREWELLS.stream(), Stream.of("tchau", "falou", "flw"))
+                            .toArray(String[]::new)),
                     weighted(GREETING, 3, "bom dia", "boa tarde", "boa noite"),
                     weighted(GREETING, 2, "oi", "ola", "e ai", "opa", "salve"))
             .flatMap(List::stream)
@@ -96,7 +103,8 @@ final class PortugueseLexicon {
     static final Set<String> KNOWN_WORDS = Set.of(
             "barbeiro", "barbeiros", "barbearia", "barbearias", "cabeleireiro", "cabelos", "horarios", "agendamento",
             "agendado", "agendada", "marcado", "marcada", "cancelado", "cancelada", "reservado", "reservada",
-            "quando", "mais", "manda", "mande", "pessoal", "algum", "alguma", "lugar", "vale", "esqueci", "temos");
+            "quando", "mais", "manda", "mande", "pessoal", "algum", "alguma", "lugar", "vale", "esqueci", "falo",
+            "temos");
 
     private PortugueseLexicon() {
     }

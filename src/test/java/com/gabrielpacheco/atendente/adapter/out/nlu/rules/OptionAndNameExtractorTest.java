@@ -112,14 +112,23 @@ class OptionAndNameExtractorTest {
         @ValueSource(strings = {"tanto faz", "qualquer um", "com qualquer uma", "qualquer", "quem tiver", "indiferente"})
         @DisplayName("Reconhece que o cliente aceita qualquer profissional")
         void deveReconhecerQualquerProfissional(String texto) {
-            assertThat(extrator.extract(spans(texto))).isTrue();
+            assertThat(extrator.extract(spans(texto), Expectation.OPTION)).isTrue();
         }
 
         @ParameterizedTest(name = "\"{0}\"")
         @ValueSource(strings = {"qualquer dia", "qualquer horario", "com o joao"})
         @DisplayName("\"qualquer dia\" fala de data, não de profissional")
         void naoDeveConfundirComQualquerDia(String texto) {
-            assertThat(extrator.extract(spans(texto))).isFalse();
+            assertThat(extrator.extract(spans(texto), Expectation.NONE)).isFalse();
+        }
+
+        @Test
+        @DisplayName("Na pergunta do dia, \"tanto faz\" é sobre o dia; só a menção clara é sobre o profissional")
+        void naPerguntaDoDiaSoAMencaoClaraDeveValer() {
+            assertThat(extrator.extract(spans("tanto faz"), Expectation.DATE)).isFalse();
+            assertThat(extrator.extract(spans("qualquer um"), Expectation.DATE)).isFalse();
+            assertThat(extrator.extract(spans("sexta com qualquer um"), Expectation.DATE)).isTrue();
+            assertThat(extrator.extract(spans("sexta com quem tiver"), Expectation.DATE)).isTrue();
         }
 
         private Spans spans(String texto) {
@@ -162,8 +171,9 @@ class OptionAndNameExtractorTest {
         }
 
         @ParameterizedTest(name = "\"{0}\"")
-        @ValueSource(strings = {"aceita pix?", "Maria?", "sou eu mesmo", "eu mesmo", "tanto faz", "pra mim", "kkkk",
-                "hmm", "espera", "deixa eu ver", "como assim", "teste", "meu filho Pedro", "barba", "corte e barba"})
+        @ValueSource(strings = {"aceita pix?", "Maria?", "sou eu mesmo", "eu mesmo", "tanto faz", "pra mim", "tchau",
+                "kkkk", "hmm", "espera", "deixa eu ver", "como assim", "teste", "show", "meu filho Pedro", "barba",
+                "corte e barba"})
         @DisplayName("Recusa perguntas, conversa, risadas e serviços")
         void naoDeveAceitarConversaComoNome(String texto) {
             assertThat(extrator.extract(texto, List.of(), CATALOGO)).isEmpty();

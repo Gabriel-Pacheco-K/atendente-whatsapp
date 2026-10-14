@@ -94,6 +94,7 @@ final class ClaudePrompts {
             case AFFIRM -> "concorda ou confirma";
             case DENY -> "discorda ou recusa";
             case THANKS -> "agradece";
+            case GOODBYE -> "se despede";
             case UNKNOWN -> "nenhuma das anteriores";
         };
     }

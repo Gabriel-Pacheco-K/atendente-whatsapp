@@ -112,10 +112,12 @@ public class ConversationRouter {
                 : Optional.empty();
     }
 
+    /** "sexta" é ordinal e dia da semana: como dia, ela diz o que quer sem depender da pergunta anterior. */
     private static boolean isBlindAnswer(TurnContext t) {
         Intent intent = t.intent();
         return intent == Intent.AFFIRM || intent == Intent.DENY
-                || BLIND_ANSWER.matcher(TextNormalizer.normalize(t.message().text()).text()).matches();
+                || t.entities().date() == null
+                && BLIND_ANSWER.matcher(TextNormalizer.normalize(t.message().text()).text()).matches();
     }
 
     private StepResult routeInState(TurnContext t) {
@@ -196,6 +198,7 @@ public class ConversationRouter {
             case PRICES, ADDRESS, OPENING_HOURS, FAQ ->
                     info.answer(intent, found, t.catalog()).map(reply -> StepResult.of(idle, reply));
             case THANKS -> Optional.of(StepResult.of(idle, Texts.thanks()));
+            case GOODBYE -> Optional.of(StepResult.of(idle, Texts.goodbye()));
             case DENY -> Optional.of(StepResult.of(idle, Texts.noWorries()));
             default -> Optional.empty();
         };
@@ -236,6 +239,9 @@ public class ConversationRouter {
         if (intent == Intent.THANKS) {
             return Optional.of(StepResult.of(state, reprompt(state, t.catalog(), t.customer())
                     .prefixedWith(Texts.thanksPrefix())));
+        }
+        if (intent == Intent.GOODBYE) {
+            return Optional.of(StepResult.of(state, Texts.goodbye()));
         }
         if (intent == Intent.MY_BOOKINGS && state.inBookingFlow()) {
             return Optional.of(cancellation.myBookings(t).prefixed(Texts.bookingSetAside()));

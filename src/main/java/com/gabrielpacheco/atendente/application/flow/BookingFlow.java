@@ -67,12 +67,18 @@ public class BookingFlow {
         if (t.entities().hasBookingData()) {
             return advance(t, state.draft().merge(t.entities()));
         }
+        if (t.intent() == Intent.DENY) {
+            return Optional.of(StepResult.of(state, Texts.noProfessionalPreference()));
+        }
         return Optional.empty();
     }
 
     public Optional<StepResult> onChoosingDate(TurnContext t, ChoosingDate state) {
         if (t.entities().hasBookingData()) {
             return advance(t, state.draft().merge(t.entities()));
+        }
+        if (t.intent() == Intent.DENY) {
+            return Optional.of(StepResult.of(state, Texts.denyInFlow()));
         }
         return Optional.empty();
     }

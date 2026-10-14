@@ -64,10 +64,11 @@ public final class RuleBasedInterpreter implements MessageInterpreter {
 
         Spans spans = new Spans(corrected.tokens());
         PortugueseLexicon.GREETINGS.forEach(spans::consumeAll);
+        PortugueseLexicon.FAREWELLS.forEach(spans::consumeAll);
         Integer option = options.extract(spans, context).orElse(null);
         TimePreference time = times.extract(spans, context).orElse(null);
         Optional<DateMention> date = dates.extract(spans, context);
-        boolean anyone = !nameExpected && anyProfessional.extract(spans);
+        boolean anyone = !nameExpected && anyProfessional.extract(spans, context.expectation());
         CatalogMention mention = catalogMention(spans, catalog.matcher());
         boolean question = normalized.original().strip().endsWith("?");
         if (nameExpected && !question && !clearlyAboutBooking(time, date, corrected, mention)) {

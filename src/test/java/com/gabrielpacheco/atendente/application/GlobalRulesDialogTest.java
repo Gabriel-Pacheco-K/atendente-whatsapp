@@ -3,6 +3,7 @@ package com.gabrielpacheco.atendente.application;
 import com.gabrielpacheco.atendente.application.port.out.SchedulingUnavailableException;
 import com.gabrielpacheco.atendente.domain.conversation.ChoosingDate;
 import com.gabrielpacheco.atendente.domain.conversation.ChoosingProfessional;
+import com.gabrielpacheco.atendente.domain.conversation.ChoosingService;
 import com.gabrielpacheco.atendente.domain.conversation.ChoosingSlot;
 import com.gabrielpacheco.atendente.domain.conversation.ConfirmingBooking;
 import com.gabrielpacheco.atendente.domain.conversation.ConversationState;
@@ -121,6 +122,25 @@ class GlobalRulesDialogTest {
     }
 
     @Test
+    @DisplayName("Uma despedida no meio do fluxo se despede e não muda o passo")
+    void despedidaNoMeioDoFluxoNaoDeveMudarOPasso() {
+        dialogo.cliente("corte com o joao");
+
+        dialogo.cliente("tchau").atendenteDiz("Até mais! Se precisar, é só chamar.").estadoE(ChoosingDate.class);
+    }
+
+    @ParameterizedTest(name = "\"{0}\"")
+    @ValueSource(strings = {"beleza, até amanhã!", "ok, até amanhã", "tchau", "até mais", "flw"})
+    @DisplayName("Uma despedida logo depois de agendar não começa outro agendamento")
+    void despedidaDepoisDeAgendarNaoDeveComecarOutroAgendamento(String despedida) {
+        noResumo().cliente("sim").atendenteDiz("Agendado");
+
+        dialogo.cliente(despedida).atendenteDiz("Até mais! Se precisar, é só chamar.").estadoE(Idle.class);
+
+        assertThat(dialogo.agenda().postCount()).isEqualTo(1);
+    }
+
+    @Test
     @DisplayName("\"bom dia, sexta\" na escolha do dia é a data, não uma saudação")
     void bomDiaSextaDeveSerAData() {
         dialogo.cliente("corte com o joao");
@@ -173,6 +193,19 @@ class GlobalRulesDialogTest {
             dialogo.cliente("quero marcar barba")
                     .atendenteDiz("Como já fazia um tempinho, recomecei nossa conversa. Com quem você prefere?")
                     .estadoE(ChoosingProfessional.class);
+        }
+
+        @ParameterizedTest(name = "\"{0}\"")
+        @ValueSource(strings = {"segunda", "quarta", "quinta", "sexta"})
+        @DisplayName("Um dia da semana atrasado não é uma opção às cegas: recomeça guardando o dia")
+        void diaDaSemanaAtrasadoDeveSerOPedidoDoDia(String dia) {
+            dialogo.cliente("corte com o joao").avancarRelogio(Duration.ofMinutes(40));
+
+            dialogo.cliente(dia)
+                    .atendenteDiz("Como já fazia um tempinho, recomecei nossa conversa. Qual serviço você quer?")
+                    .atendenteNaoDiz("por segurança")
+                    .estadoE(ChoosingService.class);
+            assertThat(((ChoosingService) dialogo.estado()).draft().date()).isNotNull();
         }
 
         @Test

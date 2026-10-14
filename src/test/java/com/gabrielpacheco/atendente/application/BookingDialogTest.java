@@ -20,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigDecimal;
@@ -211,8 +212,8 @@ class BookingDialogTest {
         }
 
         @ParameterizedTest(name = "\"{0}\"")
-        @ValueSource(strings = {"aceita pix?", "eu mesmo", "sou eu mesmo", "tanto faz", "kkkk", "deixa eu ver",
-                "como assim"})
+        @ValueSource(strings = {"aceita pix?", "eu mesmo", "sou eu mesmo", "tanto faz", "tchau", "kkkk",
+                "deixa eu ver", "como assim"})
         @DisplayName("Uma pergunta ou conversa não vira o nome do cliente")
         void conversaNaoDeveVirarONome(String fala) {
             dialogo.cliente(fala).atendenteNaoDiz("No nome de").estadoE(AskingName.class);
@@ -291,6 +292,54 @@ class BookingDialogTest {
                 .cliente("corte dia 15/11 com o joao")
                 .atendenteDiz("Consigo agendar com até 30 dias de antecedência (até quinta-feira, 12/11). Para qual dia?")
                 .estadoE(ChoosingDate.class);
+    }
+
+    @ParameterizedTest(name = "\"{0}\"")
+    @CsvSource(delimiter = '|', textBlock = """
+            corte dia 30/12         | Consigo agendar com até 30 dias de antecedência (até quinta-feira, 12/11).
+            quero agendar dia 31/02 | Essa data não existe.
+            corte dia 10/10         | Essa data já passou.
+            """)
+    @DisplayName("Um problema na data é avisado na hora, mesmo faltando o serviço ou o profissional")
+    void problemaNaDataDeveSerAvisadoNaHora(String pedido, String aviso) {
+        Dialogo dialogo = Dialogo.naWeb().cliente(pedido).atendenteDiz(aviso).estadoE(ChoosingDate.class);
+
+        dialogo.cliente("sexta").atendenteNaoDiz("Para qual dia?");
+    }
+
+    @Test
+    @DisplayName("\"tanto faz\" na pergunta do dia mostra o primeiro dia livre, com o profissional escolhido")
+    void tantoFazNaPerguntaDoDiaDeveManterOProfissional() {
+        Dialogo dialogo = Dialogo.naWeb().cliente("corte com o joao").estadoE(ChoosingDate.class);
+
+        dialogo.cliente("tanto faz")
+                .atendenteDiz("Horários livres na *terça-feira, 13/10* para *Corte masculino*")
+                .atendenteNaoDiz("com Pedro")
+                .estadoE(ChoosingSlot.class);
+        dialogo.cliente("sexta").atendenteNaoDiz("com Pedro");
+
+        assertThat(((ChoosingSlot) dialogo.estado()).draft().professionalId()).isEqualTo(JOAO.id());
+    }
+
+    @Test
+    @DisplayName("\"o quanto antes\" na pergunta do dia é o primeiro dia livre, não uma pergunta de preço")
+    void oQuantoAntesDeveSerOPrimeiroDiaLivre() {
+        Dialogo.naWeb().cliente("corte com o joao")
+                .cliente("o quanto antes")
+                .atendenteDiz("Horários livres na *terça-feira, 13/10*")
+                .atendenteNaoDiz("Nossos serviços");
+    }
+
+    @Test
+    @DisplayName("\"não\" na escolha do profissional explica o \"tanto faz\"; na do dia, pede outro dia")
+    void naoNaEscolhaDoProfissionalOuDoDiaDeveOrientar() {
+        Dialogo dialogo = Dialogo.naWeb().cliente("quero agendar barba").estadoE(ChoosingProfessional.class);
+
+        dialogo.cliente("não sei")
+                .atendenteDiz("Se não tiver preferência, responda *tanto faz*")
+                .estadoE(ChoosingProfessional.class);
+        dialogo.cliente("joao").estadoE(ChoosingDate.class);
+        dialogo.cliente("não").atendenteDiz("Me diga outro dia ou horário").estadoE(ChoosingDate.class);
     }
 
     @Test

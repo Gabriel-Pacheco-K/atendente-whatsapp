@@ -84,6 +84,10 @@ public final class Texts {
         return Reply.of("Por nada! Se precisar, é só chamar.");
     }
 
+    public static Reply goodbye() {
+        return Reply.of("Até mais! Se precisar, é só chamar.");
+    }
+
     public static Reply noWorries() {
         return Reply.of("Tudo bem! Se precisar, é só chamar.");
     }
@@ -205,6 +209,11 @@ public final class Texts {
 
     public static Reply desist() {
         return Reply.of("Tudo bem, não marquei nada. Se quiser cancelar um horário já marcado, mande *cancelar* de novo.");
+    }
+
+    public static Reply noProfessionalPreference() {
+        return Reply.of("Sem problemas. Se não tiver preferência, responda *tanto faz* que eu mostro os horários de"
+                + " todos.");
     }
 
     public static Reply denyInFlow() {

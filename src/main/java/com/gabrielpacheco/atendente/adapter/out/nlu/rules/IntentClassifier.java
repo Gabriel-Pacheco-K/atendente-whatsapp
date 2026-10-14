@@ -21,6 +21,7 @@ import static com.gabrielpacheco.atendente.domain.nlu.Intent.BOOK;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.CANCEL_BOOKING;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.DENY;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.FAQ;
+import static com.gabrielpacheco.atendente.domain.nlu.Intent.GOODBYE;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.GREETING;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.HUMAN;
 import static com.gabrielpacheco.atendente.domain.nlu.Intent.MY_BOOKINGS;
@@ -40,7 +41,7 @@ final class IntentClassifier {
 
     /** Em empate, vence quem aparece antes: pedir uma pessoa nunca perde para uma saudação. */
     private static final List<Intent> TIE_BREAK = List.of(HUMAN, CANCEL_BOOKING, RESTART, MY_BOOKINGS, BOOK, PRICES,
-            OPENING_HOURS, ADDRESS, FAQ, AFFIRM, DENY, THANKS, GREETING);
+            OPENING_HOURS, ADDRESS, FAQ, AFFIRM, DENY, THANKS, GOODBYE, GREETING);
     private static final Set<Intent> QUESTIONS = EnumSet.of(PRICES, OPENING_HOURS, ADDRESS, FAQ);
     private static final int MIN_WINNING_SCORE = 2;
     private static final int BOOKING_DATA_BONUS = 2;
@@ -52,7 +53,7 @@ final class IntentClassifier {
     private static final double CORRECTED_WORD_FACTOR = 0.9;
     private static final int NEGATION_REACH = 2;
     /** Acompanham um sim ou um não sem mudar o sentido: "sim, pode marcar", "não, obrigado", "oi, pode ser". */
-    private static final Set<Intent> GO_WITH_AN_ANSWER = EnumSet.of(AFFIRM, DENY, BOOK, THANKS, GREETING);
+    private static final Set<Intent> GO_WITH_AN_ANSWER = EnumSet.of(AFFIRM, DENY, BOOK, THANKS, GOODBYE, GREETING);
 
     Classification classify(Correction text, Expectation expectation, Entities found, int faqKeywords) {
         Scoreboard board = new Scoreboard();

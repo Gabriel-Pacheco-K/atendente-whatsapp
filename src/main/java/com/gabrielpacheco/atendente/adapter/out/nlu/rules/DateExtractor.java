@@ -59,6 +59,9 @@ final class DateExtractor {
             + "(?:\\s+(?<nextWeek>da semana que vem)|\\s+(?<coming>que vem))?\\b");
     private static final Pattern DAY_OF_MONTH = Pattern.compile("\\bdia\\s+(?<day>\\d{1,2})\\b");
     private static final Pattern WHOLE_NUMBER = Pattern.compile("\\d{1,2}");
+    /** Na pergunta do dia, quem não escolhe quer o primeiro dia com horário, a partir de hoje. */
+    private static final Pattern ANY_DAY = Pattern.compile(
+            "\\b(?:tanto faz|qualquer (?:dia|data|um)|o quanto antes|o mais cedo possivel|o mais rapido possivel)\\b");
 
     /** Sem ano, uma data que passou há mais de uma semana é do ano que vem; menos que isso, é engano. */
     private static final int RECENT_PAST_DAYS = 7;
@@ -74,6 +77,9 @@ final class DateExtractor {
         collect(spans, WRITTEN, match -> written(match, today), found);
         collect(spans, WEEKDAY, match -> DateMention.of(weekday(match, today)), found);
         collect(spans, DAY_OF_MONTH, match -> dayOfMonth(Integer.parseInt(match.group("day")), today), found);
+        if (context.expectation() == Expectation.DATE) {
+            collect(spans, ANY_DAY, match -> DateMention.of(today), found);
+        }
         if (found.isEmpty() && context.expectation() == Expectation.DATE) {
             bareDayOfMonth(spans, today).ifPresent(found::add);
         }
