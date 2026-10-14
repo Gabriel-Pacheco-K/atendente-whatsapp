@@ -5,10 +5,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
 
-import java.net.http.HttpClient;
 import java.time.Duration;
 
 @Configuration(proxyBeanMethods = false)
@@ -22,20 +20,10 @@ public class SchedulingClientConfig {
         return create(builder, app.schedulingApi());
     }
 
-    /**
-     * HTTP/1.1, sem seguir redirecionamentos (a URL vem só da configuração) e com timeouts explícitos: a chamada
-     * acontece com a conversa do cliente travada.
-     */
+    /** Os timeouts são curtos de propósito: a chamada acontece com a conversa do cliente travada. */
     public static AgendamentoApiClient create(RestClient.Builder builder, AppProperties.SchedulingApi api) {
-        HttpClient http = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .connectTimeout(api.connectTimeout())
-                .followRedirects(HttpClient.Redirect.NEVER)
-                .build();
-        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(http);
-        requestFactory.setReadTimeout(api.readTimeout());
         RestClient client = builder.baseUrl(api.baseUrl())
-                .requestFactory(requestFactory)
+                .requestFactory(OutboundHttp.requestFactory(api.connectTimeout(), api.readTimeout()))
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.USER_AGENT, "atendente-whatsapp/1.0")
                 .build();
