@@ -30,8 +30,8 @@ public record AppProperties(@NotNull ZoneId timezone,
                             @Valid @NotNull Retention retention) {
 
     /**
-     * @param turnBudget tempo máximo das consultas à agenda num turno; precisa ser maior que o read timeout da
-     *                   agenda, ou nenhuma consulta caberia nele
+     * @param turnBudget tempo máximo das consultas à agenda num turno; precisa passar do dobro do read timeout da
+     *                   agenda, para caber a conferência depois de uma escrita que ficou sem resposta
      */
     public record Conversation(@NotNull Duration expiresAfter,
                                @NotNull Duration duplicateConfirmationWindow,

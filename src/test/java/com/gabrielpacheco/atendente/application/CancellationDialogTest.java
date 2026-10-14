@@ -1,5 +1,6 @@
 package com.gabrielpacheco.atendente.application;
 
+import com.gabrielpacheco.atendente.application.port.out.SchedulingUnavailableException;
 import com.gabrielpacheco.atendente.application.port.out.UnknownBookingOutcomeException;
 import com.gabrielpacheco.atendente.domain.booking.BookingStatus;
 import com.gabrielpacheco.atendente.domain.conversation.ChoosingBookingToCancel;
@@ -10,6 +11,8 @@ import com.gabrielpacheco.atendente.fixtures.Dialogo;
 import com.gabrielpacheco.atendente.fixtures.FakeSchedulingPort.Operacao;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -157,9 +160,57 @@ class CancellationDialogTest {
         ambiente.agenda().falharProximaCom(Operacao.CANCELAMENTO, new UnknownBookingOutcomeException("timeout"));
 
         dialogo.cliente("sim")
-                .atendenteDiz("Nosso sistema de agenda está fora do ar agora.")
+                .atendenteDiz("não consegui confirmar se o horário foi cancelado")
                 .estadoE(ConfirmingCancellation.class);
         dialogo.cliente("sim").atendenteDiz("Pronto, cancelei.");
+    }
+
+    @Test
+    @DisplayName("Com a agenda lenta, o cancelamento sem resposta ainda é conferido no mesmo turno")
+    void cancelamentoLentoDeveSerConferidoNoMesmoTurno() {
+        agendarCorteAmanhaAs10();
+        dialogo.cliente("cancelar");
+        ambiente.agenda().latenciaDaAgenda(Duration.ofSeconds(5));
+        ambiente.agenda().cancelarEFalharProximoPatchCom(new UnknownBookingOutcomeException("read timeout"));
+
+        dialogo.cliente("sim").atendenteDiz("Pronto, cancelei.").estadoE(Idle.class);
+
+        assertThat(statusLocal(1)).isEqualTo(BookingStatus.CANCELLED);
+    }
+
+    @Test
+    @DisplayName("Depois de um cancelamento sem resposta, o \"não\" confere a agenda antes de dizer que nada mudou")
+    void naoDepoisDeCancelamentoIncertoDeveConferirAAgenda() {
+        agendarCorteAmanhaAs10();
+        dialogo.cliente("cancelar");
+        ambiente.agenda().cancelarEFalharProximoPatchCom(new UnknownBookingOutcomeException("timeout"));
+        ambiente.agenda().falharProximaCom(Operacao.CONSULTA, new SchedulingUnavailableException("HTTP 503"));
+        dialogo.cliente("sim").estadoE(ConfirmingCancellation.class);
+
+        dialogo.cliente("não")
+                .atendenteDiz("Conferi a agenda: o cancelamento foi feito, e o horário foi liberado.")
+                .atendenteNaoDiz("continua marcado")
+                .estadoE(Idle.class);
+
+        assertThat(statusLocal(1)).isEqualTo(BookingStatus.CANCELLED);
+    }
+
+    @Test
+    @DisplayName("Sem conseguir conferir o cancelamento sem resposta, não afirma que o horário continua marcado")
+    void naoSemConferirOCancelamentoNaoDeveAfirmarNada() {
+        agendarCorteAmanhaAs10();
+        dialogo.cliente("cancelar");
+        ambiente.agenda().cancelarEFalharProximoPatchCom(new UnknownBookingOutcomeException("timeout"));
+        ambiente.agenda().falharSempreCom(Operacao.CONSULTA, new SchedulingUnavailableException("HTTP 503"));
+        dialogo.cliente("sim");
+
+        dialogo.cliente("não")
+                .atendenteDiz("Ainda não consegui conferir na agenda se o cancelamento foi feito.")
+                .atendenteNaoDiz("continua marcado")
+                .estadoE(ConfirmingCancellation.class);
+
+        ambiente.agenda().voltarAoNormal();
+        dialogo.cliente("não").atendenteDiz("Conferi a agenda: o cancelamento foi feito");
     }
 
     @Test

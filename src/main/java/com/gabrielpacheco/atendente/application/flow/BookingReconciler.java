@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Descobre se uma tentativa de agendar com resultado desconhecido foi gravada, procurando na agenda do dia um
@@ -40,7 +39,9 @@ public class BookingReconciler {
         this.settings = settings;
     }
 
-    public Optional<AppointmentInfo> findOwn(NewAppointment attempted, long customerId, Deadline deadline) {
+    /** Duas olhadas na agenda do dia, com uma pausa entre elas, enquanto couberem no prazo do turno. */
+    public Reconciliation findOwn(NewAppointment attempted, long customerId, Deadline deadline) {
+        Reconciliation result = Reconciliation.UNKNOWN;
         for (int attempt = 1; attempt <= ATTEMPTS; attempt++) {
             boolean retry = attempt > 1;
             Duration wait = retry ? settings.reconciliationRetryDelay() : Duration.ZERO;
@@ -50,27 +51,32 @@ public class BookingReconciler {
             if (retry) {
                 pause.pause(wait);
             }
-            Optional<AppointmentInfo> found = lookUp(attempted, customerId, deadline);
-            if (found.isPresent()) {
-                log.warn("Agendamento #{} reconciliado após resultado incerto", found.get().id());
+            Reconciliation lookedUp = lookUp(attempted, customerId, deadline);
+            if (lookedUp instanceof Reconciliation.Found found) {
+                log.warn("Agendamento #{} reconciliado após resultado incerto", found.appointment().id());
                 return found;
             }
+            if (lookedUp instanceof Reconciliation.NotFound) {
+                result = lookedUp;
+            }
         }
-        return Optional.empty();
+        return result;
     }
 
-    private Optional<AppointmentInfo> lookUp(NewAppointment attempted, long customerId, Deadline deadline) {
+    private Reconciliation lookUp(NewAppointment attempted, long customerId, Deadline deadline) {
         List<AppointmentInfo> agenda;
         try {
             agenda = scheduling.within(deadline)
                     .dayAgenda(attempted.professionalId(), attempted.startAt().toLocalDate());
         } catch (SchedulingException e) {
-            return Optional.empty();
+            return Reconciliation.UNKNOWN;
         }
         return agenda.stream()
                 .filter(appointment -> isTheAttempt(appointment, attempted))
                 .filter(appointment -> !belongsToAnotherCustomer(appointment.id(), customerId))
-                .findFirst();
+                .findFirst()
+                .<Reconciliation>map(Reconciliation.Found::new)
+                .orElse(Reconciliation.NOT_FOUND);
     }
 
     private static boolean isTheAttempt(AppointmentInfo appointment, NewAppointment attempted) {

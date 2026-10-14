@@ -293,6 +293,28 @@ class AgendamentoApiClientTest {
         }
 
         @Test
+        @DisplayName("Um corpo que chega aos poucos não segura a chamada além do read timeout")
+        void corpoLentoNaoDevePassarDoReadTimeout() {
+            API.stubFor(get(urlPathEqualTo("/api/professionals/1/availability")).willReturn(json(200,
+                    "{\"professionalId\":1,\"serviceId\":1,\"date\":\"2026-10-14\",\"durationMinutes\":30,"
+                            + "\"slots\":[\"09:00:00\",\"09:15:00\",\"09:30:00\",\"09:45:00\"]}")
+                    .withChunkedDribbleDelay(40, (int) READ_TIMEOUT.multipliedBy(16).toMillis())));
+            API.stubFor(post(urlEqualTo(AGENDAMENTOS)).willReturn(json(201,
+                            AgendaHttp.agendamento(7, JOAO, CORTE, QUARTA_15H, "Gabriel Pacheco", "+55 48 99999-0001",
+                                    "SCHEDULED"))
+                    .withChunkedDribbleDelay(40, (int) READ_TIMEOUT.multipliedBy(16).toMillis())));
+            long inicio = System.nanoTime();
+
+            assertThatThrownBy(() -> cliente.freeSlots(1, 1, QUARTA))
+                    .isInstanceOf(SchedulingUnavailableException.class);
+            assertThatThrownBy(() -> cliente.book(PEDIDO)).isInstanceOf(UnknownBookingOutcomeException.class);
+
+            // A consulta tenta duas vezes e o POST uma: três read timeouts e a espera da repetição, com folga.
+            assertThat(Duration.ofNanos(System.nanoTime() - inicio)).isLessThan(READ_TIMEOUT.multipliedBy(6));
+            API.verify(exactly(1), postsDeAgendamento());
+        }
+
+        @Test
         @DisplayName("Conexão derrubada depois do envio deixa o resultado desconhecido, sem repetir")
         void conexaoResetadaNoPostDeveDeixarResultadoDesconhecido() {
             API.stubFor(post(urlEqualTo(AGENDAMENTOS))

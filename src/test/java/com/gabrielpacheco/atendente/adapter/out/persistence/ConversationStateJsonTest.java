@@ -60,7 +60,8 @@ class ConversationStateJsonTest {
                 new ConfirmingBooking(RASCUNHO.withChosen(SEXTA_10_30),
                         new PendingAttempt(2, SEXTA_10_30.startAt(), AGORA)),
                 new ChoosingBookingToCancel(List.of(REF, REF)),
-                new ConfirmingCancellation(REF));
+                new ConfirmingCancellation(REF),
+                new ConfirmingCancellation(REF, true));
     }
 
     @ParameterizedTest(name = "{0}")

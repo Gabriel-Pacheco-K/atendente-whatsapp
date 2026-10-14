@@ -30,8 +30,9 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * Decide o que fazer com cada mensagem. A ordem importa: expiração, pedidos que valem em qualquer passo (humano,
- * menu, desistência), o passo atual, as digressões (uma pergunta no meio do agendamento) e, por fim, o "não entendi".
+ * Decide o que fazer com cada mensagem. A ordem importa: expiração, a conferência de um agendamento incerto,
+ * pedidos que valem em qualquer passo (humano, menu, desistência), o passo atual, as digressões (uma pergunta no meio
+ * do agendamento) e, por fim, o "não entendi".
  * O passo atual vem antes das digressões: "barba" na escolha do serviço é o serviço, não uma pergunta de preço.
  */
 @Component
@@ -82,17 +83,31 @@ public class ConversationRouter {
         };
     }
 
+    /** Áudio, foto ou figurinha: pede texto, sem contar como mensagem não entendida e sem reabrir passo expirado. */
+    public StepResult unsupported(TurnContext t) {
+        if (!t.expired()) {
+            return StepResult.of(t.state(), Texts.onlyText()).withNote(StepResult.UNSUPPORTED);
+        }
+        return recoverExpired(t).orElseGet(() -> StepResult.of(Idle.EMPTY,
+                Texts.onlyText().prefixedWith(Texts.restarted())).withNote(StepResult.UNSUPPORTED));
+    }
+
     private StepResult routeExpired(TurnContext t) {
-        if (t.conversation().state() instanceof ConfirmingBooking stale && stale.pendingAttempt() != null) {
-            Optional<StepResult> recovered = confirmation.recoverExpired(t, stale);
-            if (recovered.isPresent()) {
-                return recovered.get();
-            }
+        Optional<StepResult> recovered = recoverExpired(t);
+        if (recovered.isPresent()) {
+            return recovered.get();
         }
         if (isBlindAnswer(t)) {
             return StepResult.of(Idle.EMPTY, Texts.restartedForSafety(), menu()).withNote(StepResult.SAFETY_RESTART);
         }
         return routeInState(t).prefixed(Texts.restarted());
+    }
+
+    /** Uma tentativa incerta não pode se perder com a expiração: se ela foi gravada, o cliente fica sabendo. */
+    private Optional<StepResult> recoverExpired(TurnContext t) {
+        return t.conversation().state() instanceof ConfirmingBooking stale && stale.pendingAttempt() != null
+                ? confirmation.recoverExpired(t, stale)
+                : Optional.empty();
     }
 
     private static boolean isBlindAnswer(TurnContext t) {
@@ -104,6 +119,12 @@ public class ConversationRouter {
     private StepResult routeInState(TurnContext t) {
         ConversationState state = t.state();
         Intent intent = t.intent();
+        if (state instanceof ConfirmingBooking pending && pending.pendingAttempt() != null && !isPlainYes(t)) {
+            Optional<StepResult> settled = confirmation.settlePending(t, pending);
+            if (settled.isPresent()) {
+                return settled.get();
+            }
+        }
         if (intent == Intent.HUMAN) {
             return StepResult.of(Idle.EMPTY, Texts.human(business.humanContactPhone(), business.humanContactHours()));
         }
@@ -125,6 +146,11 @@ public class ConversationRouter {
             }
         }
         return notUnderstood(t);
+    }
+
+    /** Só um "sim" puro vai direto para o POST, que já trata o 409 da tentativa pendente. */
+    private static boolean isPlainYes(TurnContext t) {
+        return t.intent() == Intent.AFFIRM && !t.entities().hasBookingData();
     }
 
     private Optional<StepResult> handleStep(ConversationState state, TurnContext t) {

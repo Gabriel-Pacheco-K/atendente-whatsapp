@@ -92,13 +92,33 @@ public class CancellationFlow {
             return Optional.of(StepResult.of(state, Texts.yesOrNo()));
         }
         // "cancela" em resposta a "você quer cancelar?" também é um sim.
-        if (t.intent() == Intent.AFFIRM || t.intent() == Intent.CANCEL_BOOKING) {
-            return Optional.of(cancel(t, state));
+        boolean yes = t.intent() == Intent.AFFIRM || t.intent() == Intent.CANCEL_BOOKING;
+        if (!yes && t.intent() != Intent.DENY) {
+            return Optional.empty();
         }
-        if (t.intent() == Intent.DENY) {
-            return Optional.of(StepResult.of(Idle.EMPTY, Texts.cancelKept()));
+        if (state.cancelAttempted()) {
+            return Optional.of(afterUncertainCancel(t, state, yes));
         }
-        return Optional.empty();
+        return Optional.of(yes ? cancel(t, state) : StepResult.of(Idle.EMPTY, Texts.cancelKept()));
+    }
+
+    /**
+     * O pedido anterior ficou sem resposta e pode ter cancelado. A agenda diz se ele valeu antes de pedir de novo e,
+     * principalmente, antes de dizer ao cliente que o horário continua marcado.
+     */
+    private StepResult afterUncertainCancel(TurnContext t, ConfirmingCancellation state, boolean yes) {
+        long id = state.booking().appointmentId();
+        Optional<BookingStatus> status = statusNow(t, id);
+        if (status.isPresent() && status.get() == BookingStatus.CANCELLED) {
+            bookings.updateStatus(id, BookingStatus.CANCELLED);
+            return StepResult.of(Idle.EMPTY, Texts.cancelledAfterCheck());
+        }
+        if (yes) {
+            return cancel(t, state);
+        }
+        return status.isPresent()
+                ? StepResult.of(Idle.EMPTY, Texts.cancelKept())
+                : StepResult.of(state, Texts.cancelUnchecked(phone()));
     }
 
     private StepResult cancel(TurnContext t, ConfirmingCancellation state) {
@@ -124,7 +144,7 @@ public class CancellationFlow {
                     : StepResult.of(Idle.EMPTY, Texts.cancelRejected(e.detail(), phone()));
             case UnknownBookingOutcomeException e -> isCancelledNow(t, id)
                     ? cancelled(id)
-                    : StepResult.of(state, Texts.schedulingOffline(phone()));
+                    : StepResult.of(new ConfirmingCancellation(state.booking(), true), Texts.cancelUncertain());
             case AppointmentNotFoundException e -> alreadyCancelled(id);
             case SchedulingUnavailableException e -> StepResult.of(state, Texts.schedulingOffline(phone()));
             case SlotTakenException e -> unexpectedCancelFailure(e);
@@ -149,13 +169,20 @@ public class CancellationFlow {
 
     /** Confere na agenda depois de uma falha no cancelamento; sem resposta, não dá para afirmar nada. */
     private boolean isCancelledNow(TurnContext t, long id) {
+        return statusNow(t, id).filter(status -> status == BookingStatus.CANCELLED).isPresent();
+    }
+
+    /** O status na agenda agora, vazio se ela não responder a tempo. Um agendamento que sumiu não ocupa mais nada. */
+    private Optional<BookingStatus> statusNow(TurnContext t, long id) {
         if (!t.deadline().allows(settings.schedulingCallTimeout())) {
-            return false;
+            return Optional.empty();
         }
         try {
-            return scheduling.within(t.deadline()).find(id).status() == BookingStatus.CANCELLED;
+            return Optional.of(scheduling.within(t.deadline()).find(id).status());
+        } catch (AppointmentNotFoundException e) {
+            return Optional.of(BookingStatus.CANCELLED);
         } catch (SchedulingException e) {
-            return false;
+            return Optional.empty();
         }
     }
 

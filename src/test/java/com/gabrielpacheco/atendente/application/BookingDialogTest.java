@@ -408,7 +408,9 @@ class BookingDialogTest {
     @DisplayName("Com a agenda lenta, o turno para antes de passar do prazo")
     void agendaLentaNaoDevePassarDoPrazoDoTurno() {
         Dialogo dialogo = Dialogo.naWeb().cliente("oi");
+        // Lotados, quarta e quinta gastam duas consultas lentas, e a de sexta já não caberia no prazo.
         dialogo.agenda().lotar(JOAO, QUARTA);
+        dialogo.agenda().lotar(JOAO, QUARTA.plusDays(1));
         dialogo.agenda().latenciaDaAgenda(Duration.ofMillis(4900));
         Instant antes = dialogo.ambiente().relogio().instant();
 

@@ -20,9 +20,11 @@ import com.gabrielpacheco.atendente.domain.conversation.Conversation;
 import com.gabrielpacheco.atendente.domain.conversation.ConversationState;
 import com.gabrielpacheco.atendente.domain.conversation.Customer;
 import com.gabrielpacheco.atendente.domain.conversation.Idle;
+import com.gabrielpacheco.atendente.domain.nlu.Entities;
+import com.gabrielpacheco.atendente.domain.nlu.Intent;
 import com.gabrielpacheco.atendente.domain.nlu.Interpretation;
 import com.gabrielpacheco.atendente.domain.nlu.InterpretationContext;
-import com.gabrielpacheco.atendente.domain.reply.Texts;
+import com.gabrielpacheco.atendente.domain.nlu.InterpreterKind;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -43,6 +45,9 @@ import java.util.concurrent.TimeUnit;
 public class ConversationService implements HandleIncomingMessage {
 
     private static final Logger log = LoggerFactory.getLogger(ConversationService.class);
+    /** Áudio, foto ou figurinha: não há texto para interpretar. */
+    private static final Interpretation NO_TEXT =
+            new Interpretation(Intent.UNKNOWN, 0, Entities.none(), InterpreterKind.RULES);
 
     private final CustomerStore customers;
     private final ConversationStore conversations;
@@ -88,21 +93,16 @@ public class ConversationService implements HandleIncomingMessage {
         }
         String stateBefore = conversation.state().code();
 
-        Catalog catalog = null;
-        Interpretation interpretation = null;
-        StepResult result;
-        if (message.kind() == MessageKind.UNSUPPORTED) {
-            result = unsupported(conversation, expired);
-        } else {
-            catalog = catalogProvider.current();
-            ConversationState effective = expired ? Idle.EMPTY : conversation.state();
-            interpretation = interpreter.interpret(message.text(), context(effective, catalog, localNow));
-            // O prazo da agenda começa depois da interpretação, que tem o próprio timeout: uma interpretação lenta
-            // não pode deixar a agenda sem tempo.
-            Deadline deadline = Deadline.after(settings.turnBudget(), clock);
-            result = router.route(new TurnContext(conversation, customer, message, interpretation, catalog, now,
-                    localNow, expired, deadline));
-        }
+        Catalog catalog = catalogProvider.current();
+        boolean textless = message.kind() == MessageKind.UNSUPPORTED;
+        ConversationState effective = expired ? Idle.EMPTY : conversation.state();
+        Interpretation interpretation = textless ? null
+                : interpreter.interpret(message.text(), context(effective, catalog, localNow));
+        // O prazo da agenda começa depois da interpretação, que tem o próprio timeout: uma interpretação lenta não
+        // pode deixar a agenda sem tempo.
+        TurnContext turn = new TurnContext(conversation, customer, message, textless ? NO_TEXT : interpretation,
+                catalog, now, localNow, expired, Deadline.after(settings.turnBudget(), clock));
+        StepResult result = textless ? router.unsupported(turn) : router.route(turn);
 
         if (result.customerNameToSave() != null) {
             customers.saveName(customer.id(), result.customerNameToSave());
@@ -133,14 +133,6 @@ public class ConversationService implements HandleIncomingMessage {
     private InterpretationContext context(ConversationState state, Catalog catalog, LocalDateTime localNow) {
         return new InterpretationContext(localNow.toLocalDate(), localNow.toLocalTime(), catalog, business.faqs(),
                 state.expectation(), router.offeredLabels(state, catalog), settings.daysAhead());
-    }
-
-    /** Áudio, foto ou figurinha: pede texto, sem contar como mensagem não entendida e sem reabrir passo expirado. */
-    private static StepResult unsupported(Conversation conversation, boolean expired) {
-        StepResult result = expired
-                ? StepResult.of(Idle.EMPTY, Texts.onlyText().prefixedWith(Texts.restarted()))
-                : StepResult.of(conversation.state(), Texts.onlyText());
-        return result.withNote(StepResult.UNSUPPORTED);
     }
 
     private static ConversationReply replay(ProcessedMessage previous) {

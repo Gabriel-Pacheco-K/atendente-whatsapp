@@ -87,7 +87,7 @@ public final class Barbearia {
     /** Os mesmos valores do application.yml. */
     public static ConversationSettings configuracao() {
         return new ConversationSettings(MutableClock.FUSO, Duration.ofMinutes(30), Duration.ofMinutes(2), 6, 6,
-                DIAS_A_FRENTE, 3, Duration.ofSeconds(1), Duration.ofSeconds(8), Duration.ofSeconds(5), 14,
+                DIAS_A_FRENTE, 3, Duration.ofSeconds(1), Duration.ofSeconds(12), Duration.ofSeconds(5), 14,
                 Duration.ofMinutes(30));
     }
 

@@ -13,6 +13,8 @@ import com.gabrielpacheco.atendente.fixtures.Dialogo;
 import com.gabrielpacheco.atendente.fixtures.FakeSchedulingPort.Operacao;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -107,6 +109,96 @@ class BookingFailuresDialogTest {
                 .notaE("RECONCILED");
         assertThat(ambiente.agenda().postCount()).isEqualTo(2);
         assertThat(ambiente.agenda().agendamentos()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("409 da própria tentativa, sem dar para conferir a agenda, não vira \"alguém acabou de reservar\"")
+    void conflitoDaPropriaTentativaSemConferirNaoDeveSerDeOutraPessoa() {
+        noResumo();
+        ambiente.agenda().gravarEFalharProximoPostCom(new UnknownBookingOutcomeException("timeout"));
+        ambiente.agenda().falharSempreCom(Operacao.AGENDA_DO_DIA, new SchedulingUnavailableException("HTTP 503"));
+        dialogo.cliente("sim").estadoE(ConfirmingBooking.class);
+
+        dialogo.cliente("sim")
+                .atendenteDiz("não consegui confirmar se o horário foi marcado")
+                .atendenteNaoDiz("alguém acabou de reservar")
+                .estadoE(ConfirmingBooking.class);
+
+        assertThat(((ConfirmingBooking) dialogo.estado()).pendingAttempt()).isNotNull();
+        assertThat(ambiente.agenda().postCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("Com a agenda lenta, o POST sem resposta ainda é conferido no mesmo turno")
+    void postLentoDeveSerConferidoNoMesmoTurno() {
+        noResumo();
+        ambiente.agenda().latenciaDaAgenda(Duration.ofSeconds(5));
+        ambiente.agenda().gravarEFalharProximoPostCom(new UnknownBookingOutcomeException("read timeout"));
+
+        dialogo.cliente("sim").atendenteDiz("Agendado, Gabriel! Seu código é *#1*.").notaE("RECONCILED");
+    }
+
+    @ParameterizedTest(name = "\"{0}\"")
+    @ValueSource(strings = {"nao", "cancelar", "na verdade prefiro as 11h", "menu", "quero falar com uma pessoa"})
+    @DisplayName("Depois de um resultado incerto, outra resposta que não o \"sim\" confere antes a agenda")
+    void outraRespostaDepoisDeResultadoIncertoDeveConferirAAgenda(String fala) {
+        tentativaIncertaQueFicouGravada();
+
+        dialogo.cliente(fala)
+                .atendenteDiz("conferi a agenda: seu horário de *Corte masculino* com *Pedro Henrique* na sexta-feira,"
+                        + " 16/10, às 10:30 ficou marcado (código *#1*). Se não quiser mais, mande *cancelar*.")
+                .atendenteNaoDiz("não marquei")
+                .notaE("RECONCILED")
+                .estadoE(Idle.class);
+
+        assertThat(ambiente.agendamentos().belongsTo(1, dialogo.clienteSalvo().id())).isTrue();
+        assertThat(ambiente.agenda().agendamentos()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Sem conseguir conferir a tentativa incerta, não diz que nada foi marcado e a mantém")
+    void naoSemConferirATentativaNaoDeveAfirmarNada() {
+        tentativaIncertaQueFicouGravada();
+        ambiente.agenda().falharSempreCom(Operacao.AGENDA_DO_DIA, new SchedulingUnavailableException("HTTP 503"));
+
+        dialogo.cliente("nao")
+                .atendenteDiz("preciso conferir se aquele horário ficou marcado")
+                .atendenteNaoDiz("não marquei")
+                .estadoE(ConfirmingBooking.class);
+
+        assertThat(((ConfirmingBooking) dialogo.estado()).pendingAttempt()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("Tentativa incerta que a agenda mostra que não gravou: o \"não\" segue o caminho normal")
+    void tentativaQueNaoGravouDeveDeixarONaoSeguir() {
+        noResumo();
+        ambiente.agenda().falharProximaCom(Operacao.AGENDAMENTO, new UnknownBookingOutcomeException("timeout"));
+        dialogo.cliente("sim").estadoE(ConfirmingBooking.class);
+
+        dialogo.cliente("nao").atendenteDiz("Sem problemas, não marquei.").estadoE(ChoosingDate.class);
+    }
+
+    @Test
+    @DisplayName("Áudio numa conversa expirada com tentativa pendente também confere a agenda")
+    void audioDepoisDeExpirarComTentativaPendenteDeveConferirAAgenda() {
+        tentativaIncertaQueFicouGravada();
+
+        dialogo.avancarRelogio(Duration.ofMinutes(31)).enviaAudio()
+                .atendenteDiz("conferi a agenda: seu horário de *Corte masculino*")
+                .atendenteDiz("ficou marcado (código *#1*)")
+                .notaE("RECONCILED");
+
+        assertThat(ambiente.agendamentos().belongsTo(1, dialogo.clienteSalvo().id())).isTrue();
+    }
+
+    /** O POST gravou, mas a resposta se perdeu e a agenda do dia não respondeu: a tentativa fica pendente. */
+    private void tentativaIncertaQueFicouGravada() {
+        noResumo();
+        ambiente.agenda().gravarEFalharProximoPostCom(new UnknownBookingOutcomeException("timeout"));
+        ambiente.agenda().falharProximaCom(Operacao.AGENDA_DO_DIA, new SchedulingUnavailableException("HTTP 503"));
+        ambiente.agenda().falharProximaCom(Operacao.AGENDA_DO_DIA, new SchedulingUnavailableException("HTTP 503"));
+        dialogo.cliente("sim").atendenteDiz("não consegui confirmar se o horário foi marcado");
     }
 
     @Test

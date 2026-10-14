@@ -25,14 +25,23 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * O agendamento-api por HTTP. Uma consulta (GET) que falha por rede ou com 502/503/504 é repetida uma vez, se a
  * repetição ainda couber no prazo do turno. POST e PATCH nunca são repetidos: a primeira tentativa pode ter gravado.
+ * Cada chamada, com o corpo da resposta, leva no máximo o read timeout, que é o que o prazo do turno supõe.
  */
 public class AgendamentoApiClient implements SchedulingPort {
 
     private static final Logger log = LoggerFactory.getLogger(AgendamentoApiClient.class);
+    private static final ExecutorService CALLS =
+            Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("agendamento-api-", 0).factory());
 
     private static final ParameterizedTypeReference<List<ProfessionalJson>> PROFESSIONALS =
             new ParameterizedTypeReference<>() {
@@ -151,18 +160,39 @@ public class AgendamentoApiClient implements SchedulingPort {
         return attempt.bodyOrThrow();
     }
 
+    /**
+     * O read timeout do cliente do JDK vale só até os cabeçalhos: um corpo que chega aos poucos passaria do prazo com
+     * a conversa travada. Por isso a chamada inteira roda numa thread virtual, interrompida ao fim do read timeout. A
+     * falha de rede é traduzida (e registrada) só aqui, para uma chamada abandonada não deixar rastro no log.
+     */
     private <T> Attempt<T> attempt(Operation operation, RestClient.RequestHeadersSpec<?> request,
                                    ParameterizedTypeReference<T> type) {
+        Future<Attempt<T>> call = CALLS.submit(() -> request.exchange((sent, response) ->
+                response.getStatusCode().isError()
+                        ? Attempt.failed(errors.fromResponse(operation, response),
+                        ProblemDetailMapper.isGatewayFailure(response.getStatusCode().value()))
+                        : Attempt.succeeded(response.bodyTo(type))));
         try {
-            return request.exchange((sent, response) -> response.getStatusCode().isError()
-                    ? Attempt.failed(errors.fromResponse(operation, response),
-                    ProblemDetailMapper.isGatewayFailure(response.getStatusCode().value()))
-                    : Attempt.succeeded(response.bodyTo(type)));
-        } catch (ResourceAccessException e) {
+            return call.get(readTimeout.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (ExecutionException e) {
+            return failed(operation, e.getCause());
+        } catch (TimeoutException e) {
+            call.cancel(true);
             return Attempt.failed(errors.fromIoFailure(operation, e), true);
-        } catch (RestClientException e) {
-            return Attempt.failed(errors.unreadableBody(operation, e), false);
+        } catch (InterruptedException e) {
+            call.cancel(true);
+            Thread.currentThread().interrupt();
+            return Attempt.failed(errors.fromIoFailure(operation, e), false);
         }
+    }
+
+    private <T> Attempt<T> failed(Operation operation, Throwable failure) {
+        return switch (failure) {
+            case ResourceAccessException e -> Attempt.failed(errors.fromIoFailure(operation, e), true);
+            case RestClientException e -> Attempt.failed(errors.unreadableBody(operation, e), false);
+            case RuntimeException e -> throw e;
+            default -> throw new IllegalStateException(failure);
+        };
     }
 
     private boolean pauseBeforeRetry() {

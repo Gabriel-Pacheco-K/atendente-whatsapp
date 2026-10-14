@@ -184,6 +184,17 @@ public final class Texts {
                 + " ficou marcado (código *#" + booking.appointmentId() + "*).");
     }
 
+    /** Uma tentativa incerta que estava gravada, descoberta quando o cliente já tinha mandado outra coisa. */
+    public static Reply pendingFound(BookingRef booking) {
+        return Reply.of("Antes de seguir, conferi a agenda: seu horário de " + describe(booking) + " ficou marcado"
+                + " (código *#" + booking.appointmentId() + "*). Se não quiser mais, mande *cancelar*.");
+    }
+
+    public static Reply pendingUnchecked(String phone) {
+        return Reply.of("Antes de seguir, preciso conferir se aquele horário ficou marcado, mas a agenda ainda não"
+                + " respondeu. Mande uma mensagem de novo em instantes ou fale com a gente pelo " + phone + ".");
+    }
+
     public static Reply declined() {
         return Reply.of("Sem problemas, não marquei. Para qual dia você prefere?");
     }
@@ -373,6 +384,20 @@ public final class Texts {
 
     public static Reply cancelled() {
         return Reply.of("Pronto, cancelei. O horário foi liberado.");
+    }
+
+    public static Reply cancelUncertain() {
+        return new Reply("A agenda demorou para responder e não consegui confirmar se o horário foi cancelado. Mande"
+                + " *sim* de novo em instantes que eu confiro antes de tentar outra vez.", YES_NO);
+    }
+
+    public static Reply cancelledAfterCheck() {
+        return Reply.of("Conferi a agenda: o cancelamento foi feito, e o horário foi liberado.");
+    }
+
+    public static Reply cancelUnchecked(String phone) {
+        return Reply.of("Ainda não consegui conferir na agenda se o cancelamento foi feito. Mande *não* de novo em"
+                + " instantes que eu confiro, ou fale com a gente pelo " + phone + ".");
     }
 
     public static Reply alreadyCancelled() {

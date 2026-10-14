@@ -88,16 +88,27 @@ public class BookingConfirmation {
      * na agenda antes de recomeçar: se ela foi gravada, o cliente fica sabendo e o agendamento não fica órfão.
      */
     public Optional<StepResult> recoverExpired(TurnContext t, ConfirmingBooking stale) {
-        PendingAttempt pending = stale.pendingAttempt();
-        Customer customer = t.customer();
-        if (pending == null || customer.name() == null) {
-            return Optional.empty();
+        if (checkPending(t, stale) instanceof Reconciliation.Found found) {
+            AppointmentInfo info = found.appointment();
+            return Optional.of(booked(t, stale.draft(), info, Texts.foundAfterRestart(info.ref()))
+                    .withNote(StepResult.RECONCILED));
         }
-        NewAppointment attempt = new NewAppointment(pending.professionalId(), stale.draft().serviceId(),
-                pending.startAt(), customer.name(), customer.phone());
-        return reconciler.findOwn(attempt, customer.id(), t.deadline())
-                .map(info -> booked(t, stale.draft(), info, Texts.foundAfterRestart(info.ref()))
-                        .withNote(StepResult.RECONCILED));
+        return Optional.empty();
+    }
+
+    /**
+     * Depois de uma tentativa incerta, o cliente mandou outra coisa que não um "sim". Antes de seguir, a agenda diz se
+     * a tentativa foi gravada: um "não" ou uma desistência não podem deixar um agendamento órfão nem ouvir "não
+     * marquei" sem conferir. Vazio quando a tentativa não está na agenda: aí a mensagem segue o caminho normal.
+     */
+    public Optional<StepResult> settlePending(TurnContext t, ConfirmingBooking state) {
+        return switch (checkPending(t, state)) {
+            case Reconciliation.Found found -> Optional.of(booked(t, state.draft(), found.appointment(),
+                    Texts.pendingFound(found.appointment().ref())).withNote(StepResult.RECONCILED));
+            case Reconciliation.Unknown unknown ->
+                    Optional.of(StepResult.of(state, Texts.pendingUnchecked(business.humanContactPhone())));
+            case Reconciliation.NotFound notFound -> Optional.empty();
+        };
     }
 
     /** Vale no início do agendamento e de novo no "sim", porque o cliente pode ter agendado por outra conversa. */
@@ -114,12 +125,9 @@ public class BookingConfirmation {
         BookingDraft draft = state.draft();
         return switch (failure) {
             case SlotTakenException e -> isRetryOfPending(state)
-                    ? reconcile(t, draft, attempt).orElseGet(() -> slotTaken(t, draft))
+                    ? afterConflictWithPending(t, state, attempt)
                     : slotTaken(t, draft);
-            case UnknownBookingOutcomeException e -> reconcile(t, draft, attempt).orElseGet(() -> StepResult.of(
-                    new ConfirmingBooking(draft, new PendingAttempt(attempt.professionalId(), attempt.startAt(),
-                            t.now())),
-                    Texts.bookingUncertain()));
+            case UnknownBookingOutcomeException e -> afterUncertainBooking(t, draft, attempt);
             case BookingRejectedException e -> StepResult.of(new ChoosingDate(draft.withoutDateAndTime()),
                     Texts.bookingRejected(e.detail()));
             case SchedulingUnavailableException e -> StepResult.of(state,
@@ -137,9 +145,37 @@ public class BookingConfirmation {
         return state.pendingAttempt() != null && state.pendingAttempt().isFor(state.draft().chosen());
     }
 
-    private Optional<StepResult> reconcile(TurnContext t, BookingDraft draft, NewAppointment attempt) {
-        return reconciler.findOwn(attempt, t.customer().id(), t.deadline())
-                .map(info -> booked(t, draft, info, bookedReply(info)).withNote(StepResult.RECONCILED));
+    /** O POST pode ter gravado: confere na agenda e, sem a resposta, guarda a tentativa para o próximo "sim". */
+    private StepResult afterUncertainBooking(TurnContext t, BookingDraft draft, NewAppointment attempt) {
+        if (reconciler.findOwn(attempt, t.customer().id(), t.deadline()) instanceof Reconciliation.Found found) {
+            return reconciled(t, draft, found);
+        }
+        PendingAttempt pending = new PendingAttempt(attempt.professionalId(), attempt.startAt(), t.now());
+        return StepResult.of(new ConfirmingBooking(draft, pending), Texts.bookingUncertain());
+    }
+
+    /** O horário só é de outra pessoa se a agenda mostrar que a tentativa do cliente não está lá. */
+    private StepResult afterConflictWithPending(TurnContext t, ConfirmingBooking state, NewAppointment attempt) {
+        return switch (reconciler.findOwn(attempt, t.customer().id(), t.deadline())) {
+            case Reconciliation.Found found -> reconciled(t, state.draft(), found);
+            case Reconciliation.Unknown unknown -> StepResult.of(state, Texts.bookingUncertain());
+            case Reconciliation.NotFound notFound -> slotTaken(t, state.draft());
+        };
+    }
+
+    private Reconciliation checkPending(TurnContext t, ConfirmingBooking state) {
+        PendingAttempt pending = state.pendingAttempt();
+        Customer customer = t.customer();
+        if (pending == null || customer.name() == null) {
+            return Reconciliation.NOT_FOUND;
+        }
+        NewAppointment attempt = new NewAppointment(pending.professionalId(), state.draft().serviceId(),
+                pending.startAt(), customer.name(), customer.phone());
+        return reconciler.findOwn(attempt, customer.id(), t.deadline());
+    }
+
+    private StepResult reconciled(TurnContext t, BookingDraft draft, Reconciliation.Found found) {
+        return booked(t, draft, found.appointment(), bookedReply(found.appointment())).withNote(StepResult.RECONCILED);
     }
 
     /** Alguém reservou antes: oferece os horários mais próximos do que o cliente tinha escolhido. */
