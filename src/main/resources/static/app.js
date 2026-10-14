@@ -155,12 +155,16 @@
     });
   }
 
+  function rolarParaOFim() {
+    elementos.mensagens.scrollTop = elementos.mensagens.scrollHeight;
+  }
+
   function adicionarBalao(tipo, texto) {
     const balao = document.createElement('li');
     balao.className = 'balao ' + tipo;
     preencherComFormatacao(balao, texto);
     elementos.mensagens.appendChild(balao);
-    elementos.mensagens.scrollTop = elementos.mensagens.scrollHeight;
+    rolarParaOFim();
     return balao;
   }
 
@@ -174,6 +178,8 @@
       return chip;
     });
     elementos.sugestoes.replaceChildren(...chips);
+    // Os botões encolhem a conversa: sem rolar de novo, o fim da última mensagem fica escondido atrás deles.
+    rolarParaOFim();
   }
 
   function mostrarRespostas(respostas) {
