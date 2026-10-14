@@ -113,6 +113,8 @@
                     </systemPropertyVariables>
                     <!-- Garante que nenhum teste chame a API paga por acidente. -->
                     <excludedEnvironmentVariables>ANTHROPIC_API_KEY</excludedEnvironmentVariables>
+                    <!-- O @{argLine} traz o javaagent do JaCoCo; o Mockito se anexa à JVM em tempo de execução. -->
+                    <argLine>@{argLine} -XX:+EnableDynamicAgentLoading</argLine>
                 </configuration>
             </plugin>
             <plugin>

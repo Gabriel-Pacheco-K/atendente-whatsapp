@@ -1,15 +1,20 @@
 package com.gabrielpacheco.atendente;
 
+import com.gabrielpacheco.atendente.adapter.in.http.RateLimiter;
 import com.gabrielpacheco.atendente.adapter.in.web.ChatRateLimits;
 import com.gabrielpacheco.atendente.adapter.out.nlu.rules.RuleBasedInterpreter;
 import com.gabrielpacheco.atendente.application.CatalogProvider;
+import com.gabrielpacheco.atendente.application.port.out.ConversationStore;
 import com.gabrielpacheco.atendente.application.port.out.MessageInterpreter;
 import com.gabrielpacheco.atendente.fixtures.AgendaHttp;
+import com.gabrielpacheco.atendente.fixtures.ConversationStoreComFalha;
 import com.gabrielpacheco.atendente.fixtures.MutableClock;
+import com.gabrielpacheco.atendente.fixtures.WhatsAppHttp;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -29,7 +34,8 @@ import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options
  * Base dos testes com Spring: PostgreSQL real e WireMock para a agenda e para a Graph API.
  * Os contêineres e servidores sobem uma vez por JVM e nunca param, para que a porta não mude e o contexto do
  * Spring continue reaproveitável entre as classes de teste. Antes de cada teste, o banco é esvaziado, a agenda volta
- * a ter só o catálogo do seed e o relógio volta para terça, 13/10/2026, 14:00.
+ * a ter só o catálogo do seed, a Graph API aceita os envios, os limites de taxa zeram e o relógio volta para terça,
+ * 13/10/2026, 14:00. O webhook do WhatsApp fica ligado, com os segredos do application-test.yml.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -64,6 +70,12 @@ public abstract class IntegrationTestBase {
     @Autowired
     private ObjectProvider<ChatRateLimits> limitesDoChat;
 
+    @Autowired
+    private ObjectProvider<RateLimiter> limiteDoWhatsApp;
+
+    @Autowired
+    protected ConversationStoreComFalha conversas;
+
     @DynamicPropertySource
     static void servicosExternos(DynamicPropertyRegistry registry) {
         registry.add("app.scheduling-api.base-url", AGENDA::baseUrl);
@@ -78,7 +90,10 @@ public abstract class IntegrationTestBase {
         relogio.ajustar(MutableClock.REFERENCIA);
         agenda().comCatalogoDoSeed();
         catalogo.invalidate();
+        WhatsAppHttp.aceitarEnvios(GRAPH);
         limitesDoChat.ifAvailable(ChatRateLimits::reset);
+        limiteDoWhatsApp.ifAvailable(RateLimiter::reset);
+        conversas.voltarAoNormal();
     }
 
     protected static AgendaHttp agenda() {
@@ -92,6 +107,13 @@ public abstract class IntegrationTestBase {
         @Primary
         MutableClock mutableClock() {
             return MutableClock.naReferencia();
+        }
+
+        @Bean
+        @Primary
+        ConversationStoreComFalha conversationStoreComFalha(
+                @Qualifier("jpaConversationStore") ConversationStore real) {
+            return new ConversationStoreComFalha(real);
         }
 
         @Bean
