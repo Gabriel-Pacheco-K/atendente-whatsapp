@@ -77,14 +77,14 @@ dia_e_mes=$(date -d "$dia" +%d/%m)
 passo "Agendamento de verdade na quarta $dia_e_mes às 10h com o João"
 cliente=$(nova_sessao "+55 48 99999-0001")
 esperar "$(dizer "$cliente" "quero cortar dia $dia_e_mes às 10h com o joão")" "Boa notícia"
-esperar "$(dizer "$cliente" "Teste Integrado")" "Confirma o agendamento?"
+esperar "$(dizer "$cliente" "Ana Souza")" "Confirma o agendamento?"
 esperar "$(dizer "$cliente" "sim")" "Agendado, Teste!"
-[[ $(status_na_agenda "Teste Integrado" 10:00) == SCHEDULED ]] || falhar "o agendamento não está SCHEDULED na agenda"
+[[ $(status_na_agenda "Ana Souza" 10:00) == SCHEDULED ]] || falhar "o agendamento não está SCHEDULED na agenda"
 
 passo "Cancelamento pelo chat"
 esperar "$(dizer "$cliente" "cancelar")" "Você quer cancelar"
 esperar "$(dizer "$cliente" "sim")" "Pronto, cancelei."
-[[ $(status_na_agenda "Teste Integrado" 10:00) == CANCELLED ]] || falhar "o agendamento não está CANCELLED na agenda"
+[[ $(status_na_agenda "Ana Souza" 10:00) == CANCELLED ]] || falhar "o agendamento não está CANCELLED na agenda"
 
 passo "Corrida: duas sessões confirmam o mesmo horário, às 11h"
 bento=$(nova_sessao "+55 48 99999-0002")
@@ -92,12 +92,12 @@ carla=$(nova_sessao "+55 48 99999-0003")
 for sessao in "$bento" "$carla"; do
   esperar "$(dizer "$sessao" "quero cortar dia $dia_e_mes às 11h com o joão")" "Boa notícia"
 done
-esperar "$(dizer "$bento" "Bento Corrida")" "Confirma o agendamento?"
-esperar "$(dizer "$carla" "Carla Corrida")" "Confirma o agendamento?"
+esperar "$(dizer "$bento" "Bento Ramos")" "Confirma o agendamento?"
+esperar "$(dizer "$carla" "Carla Mendes")" "Confirma o agendamento?"
 esperar "$(dizer "$bento" "sim")" "Agendado, Bento!"
 esperar "$(dizer "$carla" "sim")" "Puxa, alguém acabou de reservar esse horário."
-[[ $(status_na_agenda "Bento Corrida" 11:00) == SCHEDULED ]] || falhar "o horário das 11h não ficou com quem confirmou primeiro"
-[[ -z $(status_na_agenda "Carla Corrida" 11:00) ]] || falhar "o horário das 11h foi marcado duas vezes"
+[[ $(status_na_agenda "Bento Ramos" 11:00) == SCHEDULED ]] || falhar "o horário das 11h não ficou com quem confirmou primeiro"
+[[ -z $(status_na_agenda "Carla Mendes" 11:00) ]] || falhar "o horário das 11h foi marcado duas vezes"
 
 passo "Webhook do WhatsApp: verificação, mensagem assinada, mesmo wamid de novo e assinatura errada"
 if [[ -f "$RAIZ/.env" ]]; then
