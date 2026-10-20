@@ -25,7 +25,8 @@ Ele grava os horários no [agendamento-api](https://github.com/Gabriel-Pacheco-K
   não veio e cancelar; marcar na mão quem ligou; bloquear horário de almoço ou folga; e o faturamento do dia, do mês
   e do ano, com gráfico.
 - Avisa o dono no WhatsApp a cada horário marcado pelo atendente (opcional).
-- Funciona no chat web (uma página parecida com o WhatsApp) e no WhatsApp de verdade, pela Cloud API da Meta.
+- Funciona no chat web (uma página parecida com o WhatsApp) e no WhatsApp de verdade, pela Cloud API da Meta ou
+  pela Twilio.
 
 Não precisa de IA paga: tem um motor de regras próprio para o português. Se quiser, dá para ligar o Claude para as
 frases mais difíceis (é opcional e só é chamado quando as regras ficam em dúvida).
@@ -64,6 +65,10 @@ Para o dono receber um aviso no WhatsApp a cada horário novo, coloque o número
 (com DDI e DDD, ex.: `5548999990000`). A Meta só entrega mensagem livre para quem falou com o número do atendente nas
 últimas 24 horas, então o dono manda um "oi" para ele uma vez por dia.
 
+Para ligar no WhatsApp pelo sandbox grátis da Twilio, coloque no `.env` `TWILIO_ENABLED=true`, o Account SID, o
+Auth Token e a URL pública do túnel terminando em `/webhook/twilio` (a mesma cadastrada no console da Twilio, em
+"When a message comes in").
+
 Para ligar no WhatsApp com o número de teste grátis da Meta, o passo a passo está em
 [docs/detalhes-tecnicos.md](docs/detalhes-tecnicos.md#whatsapp-com-o-número-de-teste-da-meta).
 
@@ -73,7 +78,7 @@ Para ligar no WhatsApp com o número de teste grátis da Meta, o passo a passo e
 mvn verify
 ```
 
-São 992 testes: unitários, conversas inteiras simuladas, integração com PostgreSQL real (Testcontainers) e a API de
+São 997 testes: unitários, conversas inteiras simuladas, integração com PostgreSQL real (Testcontainers) e a API de
 agendamento simulada com WireMock. No CI ainda roda um teste ponta a ponta com o agendamento-api de verdade.
 
 ## Tecnologias

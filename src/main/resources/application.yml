@@ -67,6 +67,13 @@ app:
       graph-api-version: ${WHATSAPP_GRAPH_VERSION:v23.0}
       connect-timeout: 2s
       read-timeout: 5s
+  # WhatsApp pela Twilio (sandbox grátis), no lugar da Cloud API da Meta.
+  twilio:
+    enabled: ${TWILIO_ENABLED:false}
+    account-sid: ${TWILIO_ACCOUNT_SID:}
+    auth-token: ${TWILIO_AUTH_TOKEN:}
+    from-number: ${TWILIO_WHATSAPP_FROM:+14155238886}
+    webhook-url: ${TWILIO_WEBHOOK_URL:}
   ai:
     claude:
       enabled: ${CLAUDE_ENABLED:true}       # só tem efeito com ANTHROPIC_API_KEY
