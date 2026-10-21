@@ -20,7 +20,7 @@ services:
 
   agendamento-api:
     # Fixado no commit conferido; trocar por #v1.0.0 quando a tag existir.
-    build: https://github.com/Gabriel-Pacheco-K/agendamento-api.git#b2b4f7b34b4b12c76aac7259406858e80f09b531
+    build: https://github.com/Gabriel-Pacheco-K/agendamento-api.git#e917b1f9a86be6cf4047248cd10b4045733417dd
     environment:
       DB_URL: "jdbc:postgresql://db:5432/agendamento"
       DB_USER: agendamento

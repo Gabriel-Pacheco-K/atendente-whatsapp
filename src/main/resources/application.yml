@@ -9,7 +9,7 @@ spring:
   application.name: atendente-whatsapp
   config.import: "classpath:business.yml, optional:file:./config/business.yml"
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/atendente}
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:atendente}${DB_URL_PARAMS:}}
     username: ${DB_USER:atendente}
     password: ${DB_PASSWORD:atendente}
     hikari:

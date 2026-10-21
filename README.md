@@ -72,6 +72,18 @@ Auth Token e a URL pública do túnel terminando em `/webhook/twilio` (a mesma c
 Para ligar no WhatsApp com o número de teste grátis da Meta, o passo a passo está em
 [docs/detalhes-tecnicos.md](docs/detalhes-tecnicos.md#whatsapp-com-o-número-de-teste-da-meta).
 
+## No ar (Render)
+
+O `render.yaml` sobe o atendente, o agendamento-api e um PostgreSQL no plano grátis do Render:
+
+1. No Render, **New > Blueprint** e escolha este repositório.
+2. Quando pedir, coloque uma senha em `PAINEL_SENHA`. Em `AGENDAMENTO_API_URL`, coloque a URL do
+   agendamento-api que o Render mostrar (ex.: `https://agendamento-api-xxxx.onrender.com`).
+3. Com os dois no ar, cadastre a barbearia de exemplo uma vez:
+   `API=https://agendamento-api-xxxx.onrender.com bash docker/seed/seed-agendamento.sh`
+
+No plano grátis, o serviço dorme depois de 15 minutos sem uso: a primeira visita demora cerca de um minuto.
+
 ## Testes
 
 ```bash

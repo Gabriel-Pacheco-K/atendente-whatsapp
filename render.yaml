@@ -1,0 +1,56 @@
+# Demonstração no Render (plano grátis): o atendente e o agendamento-api, cada um no seu schema do mesmo PostgreSQL.
+# No Render: New > Blueprint > escolha este repositório. Depois do primeiro deploy, preencha AGENDAMENTO_API_URL
+# com a URL pública do agendamento-api e rode o seed uma vez (veja o README).
+databases:
+  - name: demo-db
+    plan: free
+    databaseName: demo
+    user: demo
+
+services:
+  - type: web
+    name: agendamento-api
+    runtime: docker
+    repo: https://github.com/Gabriel-Pacheco-K/agendamento-api
+    branch: main
+    plan: free
+    region: oregon
+    healthCheckPath: /actuator/health
+    envVars:
+      - { key: PORT, value: "8080" }
+      - { key: DB_HOST, fromDatabase: { name: demo-db, property: host } }
+      - { key: DB_PORT, fromDatabase: { name: demo-db, property: port } }
+      - { key: DB_NAME, fromDatabase: { name: demo-db, property: database } }
+      - { key: DB_USER, fromDatabase: { name: demo-db, property: user } }
+      - { key: DB_PASSWORD, fromDatabase: { name: demo-db, property: password } }
+      - { key: DB_URL_PARAMS, value: "?currentSchema=agendamento" }
+      - { key: SPRING_FLYWAY_SCHEMAS, value: agendamento }
+      - { key: SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA, value: agendamento }
+      - { key: APP_TIMEZONE, value: America/Sao_Paulo }
+      - { key: JAVA_TOOL_OPTIONS, value: "-XX:MaxRAMPercentage=70" }
+
+  - type: web
+    name: atendente
+    runtime: docker
+    repo: https://github.com/Gabriel-Pacheco-K/atendente-whatsapp
+    branch: main
+    plan: free
+    region: oregon
+    healthCheckPath: /actuator/health
+    envVars:
+      - { key: PORT, value: "8080" }
+      - { key: DB_HOST, fromDatabase: { name: demo-db, property: host } }
+      - { key: DB_PORT, fromDatabase: { name: demo-db, property: port } }
+      - { key: DB_NAME, fromDatabase: { name: demo-db, property: database } }
+      - { key: DB_USER, fromDatabase: { name: demo-db, property: user } }
+      - { key: DB_PASSWORD, fromDatabase: { name: demo-db, property: password } }
+      - { key: DB_URL_PARAMS, value: "?currentSchema=atendente" }
+      - { key: SPRING_FLYWAY_SCHEMAS, value: atendente }
+      - { key: APP_TIMEZONE, value: America/Sao_Paulo }
+      - { key: TZ, value: America/Sao_Paulo }
+      # O Render entrega o https num proxy: com isso, o cookie do painel sai com Secure.
+      - { key: FORWARD_HEADERS, value: native }
+      - { key: SHOW_DIAGNOSTICS, value: "true" }
+      # Preenchidos no painel do Render, nunca no repositório.
+      - { key: AGENDAMENTO_API_URL, sync: false }
+      - { key: PAINEL_SENHA, sync: false }
